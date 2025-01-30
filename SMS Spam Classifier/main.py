@@ -65,8 +65,21 @@ def vectorize(train_data: list, test_data: list) -> None:
 
     print(test_feature_vectors)
     print(train_feature_vectors)
+    
+# Calculates the similarity between two vectors
+def cosine_distance(vec1, vec2):
+    # Calculate dot product 
+    dproduct = np.dot(vec1,vec2)
+    
+    # Caculate Magnitudes
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+    
+    final = dproduct/(norm1*norm2)
+    return 
 
 def k_nn(corpus: list) -> None:
+    
     pass
 
 def nb(corpus: list, sample: str) -> str:
