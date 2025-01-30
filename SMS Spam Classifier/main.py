@@ -67,7 +67,7 @@ def vectorize(train_data: list, test_data: list) -> None:
     print(train_feature_vectors)
     
 # Calculates the similarity between two vectors
-def cosine_distance(vec1, vec2):
+def cosine_sim(vec1, vec2):
     # Calculate dot product 
     dproduct = np.dot(vec1,vec2)
     
@@ -76,11 +76,29 @@ def cosine_distance(vec1, vec2):
     norm2 = np.linalg.norm(vec2)
     
     final = dproduct/(norm1*norm2)
-    return 
+    return final
 
-def k_nn(corpus: list) -> None:
+def k_nn(train_vectors, train_labels, test_vector, k=5):
+    # Considers 5 neighbors
+    # Compute distances between test_vector and all train_vectors
+    distances = []
+    for i, train_vec in enumerate(train_vectors):
+        sim = cosine_sim(test_vector, train_vec)
+        distances.append((sim, train_labels[i]))  
     
-    pass
+    # Sort by descending order of similarity, selects the top (k) neighbors
+    distances.sort(reverse=True, key=lambda x: x[0])
+    neighbors = distances[:k]
+    
+    # Majority vote
+    spam_votes = sum(1 for _, label in neighbors if label == 'spam')
+    ham_votes = k - spam_votes
+    
+    # Decide whether it is spam or ham
+    if spam_votes > ham_votes:
+        return 'spam'
+    else:
+        return 'ham'
 
 def nb(corpus: list, sample: str) -> str:
     spam_count = 0
