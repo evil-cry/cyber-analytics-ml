@@ -3,68 +3,56 @@ import numpy as np
 import pandas as pd
 import string
 
-def vectorize(train_data: list, test_data: list) -> None:
+def vectorize(train_data: list, test_data: list):
     # Build vocabulary from training data
     vocabulary = set()
     for document in train_data:
         vocabulary.update(document[1])
 
-    terms = Counter([term for document in train_data for term in document[1]])
-    terms += Counter([term for document in test_data for term in document[1]])
-    document_length = len(train_data)
-
-    # Calculate inverse document frequency for each term
+    # Sort the vocab list for constistency
+    vocab_list = sorted(vocabulary)
+    
+    # Calculate number of texts with each term (frequency)
+    doc_freq = {term: 0 for term in vocab_list}
+    for doc in train_data:
+        unique_words = set(doc[1])
+        for term in unique_words:
+            doc_freq[term] += 1
+            
+    # Calculate IDF 
+    N = len(train_data)
     idf = {}
-    for word, count in terms.items():
-        idf[word] = np.log(document_length / (count + 1)) + 1
-
-    print(idf)
-
-    # Calculate term frequency for each term in the training data set
+    for term in vocab_list:
+        df = doc_freq[term]
+        idf[term] = np.log(N / (df + 1)) + 1
+        
+    # Create TF-IDF vectors for train data
     train_feature_vectors = []
-
-    for document in train_data:
-        tf = {}
-
-        words = document[1]
-        document_frequency = Counter(words)
-        document_word_total = len(words)
-
-        for word in set(words):
-            tf[word] = document_frequency[word] / document_word_total if document_word_total > 0 else 0
-
+    for doc in train_data:
+        words = doc[1]
+        term_counts = Counter(words)
+        doc_len = len(words)
         feature_vector = []
-
-        for word in set(words):
-            tf_idf = tf[word] * idf[word]
+        for term in vocab_list:
+            tf = term_counts.get(term, 0) / doc_len if doc_len > 0 else 0
+            tf_idf = tf * idf[term]
             feature_vector.append(tf_idf)
-
         train_feature_vectors.append(feature_vector)
 
-    # Calculate term frequency for each term in the testing data set
+    # Create TF-IDF vectors for test data
     test_feature_vectors = []
-    for document in test_data:
-        tf = {}
-
-        words = document[1]
-        document_frequency = Counter(words)
-        document_word_total = len(words)
-
-        for word in set(words):
-            tf[word] = document_frequency[word] / document_word_total if document_word_total > 0 else 0
-
+    for doc in test_data:
+        words = doc[1]
+        term_counts = Counter(words)
+        doc_len = len(words)
         feature_vector = []
-
-        for word in set(words):
-            tf_idf = tf[word] * idf[word]
+        for term in vocab_list:
+            tf = term_counts.get(term, 0) / doc_len if doc_len > 0 else 0
+            tf_idf = tf * idf[term]
             feature_vector.append(tf_idf)
-
-        print(feature_vector)
-
         test_feature_vectors.append(feature_vector)
-
-    print(test_feature_vectors)
-    print(train_feature_vectors)
+        
+    return train_feature_vectors, test_feature_vectors
     
 # Calculates the similarity between two vectors
 def cosine_sim(vec1, vec2):
@@ -99,6 +87,48 @@ def k_nn(train_vectors, train_labels, test_vector, k=5):
         return 'spam'
     else:
         return 'ham'
+    
+    
+def test_knn(train_data: list, test_data: list, k=5) -> None:
+    tp = 0
+    fp = 0
+    tn = 0
+    fn = 0
+
+    count = 0
+    
+    # Get Vectors from Vecotrize and create the labels
+    train_vectors, test_vectors = vectorize(train_data, test_data)
+    train_labels = [doc[0] for doc in train_data]
+    test_labels = [doc[0] for doc in test_data]
+    
+    # Classify each instance
+    for test_v, label in zip(test_vectors, test_labels):
+        prediction = k_nn(train_vectors, train_labels, test_v, k)
+        
+        if prediction == 'spam' and label == 'spam':
+            tp += 1
+        elif prediction == 'spam' and label == 'ham':
+            fp += 1
+        elif prediction == 'ham' and label == 'ham':
+            tn += 1
+        elif prediction == 'ham' and label == 'spam':
+            fn += 1
+    
+    # Final Calculations
+    accuracy = (tp + tn) / (tp + fp + tn + fn)
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    f1 = 2 * (precision * recall) / (precision + recall) 
+    
+    # Output Final Calculations
+    print('\n\nK_nn Model\n')
+    print(f'accuracy: {accuracy}')
+    print(f'precision: {precision}')
+    print(f'recall: {recall}')
+    print(f'f1: {f1}')
+    
+    pass
 
 def nb(corpus: list, sample: str) -> str:
     spam_count = 0
