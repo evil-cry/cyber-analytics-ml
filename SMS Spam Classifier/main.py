@@ -63,6 +63,10 @@ def cosine_sim(vec1, vec2):
     norm1 = np.linalg.norm(vec1)
     norm2 = np.linalg.norm(vec2)
     
+    # Stops "scalar divide" error from occuring
+    if norm1 == 0 or norm2 == 0:
+        return 0
+    
     final = dproduct/(norm1*norm2)
     return final
 
@@ -99,8 +103,12 @@ def test_knn(train_data: list, test_data: list, k=5) -> None:
     
     # Get Vectors from Vecotrize and create the labels
     train_vectors, test_vectors = vectorize(train_data, test_data)
-    train_labels = [doc[0] for doc in train_data]
-    test_labels = [doc[0] for doc in test_data]
+    train_labels = np.array([doc[0] for doc in train_data])
+    test_labels = np.array([doc[0] for doc in test_data])
+    
+    # Converts to Numpy arrays to make faster
+    train_vectors = np.array(train_vectors)
+    test_vectors = np.array(test_vectors)
     
     # Classify each instance
     for test_v, label in zip(test_vectors, test_labels):
@@ -120,6 +128,11 @@ def test_knn(train_data: list, test_data: list, k=5) -> None:
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
     f1 = 2 * (precision * recall) / (precision + recall) 
+    
+    accuracy = f"{accuracy * 100:.6f}%"
+    precision = f"{precision * 100:.6f}%"
+    recall = f"{recall * 100:.6f}%"
+    f1 = f"{f1 * 100:.6f}%"
     
     # Output Final Calculations
     print('\n\nK_nn Model\n')
@@ -269,7 +282,7 @@ def main() -> None:
         test_data = test_data.to_numpy().tolist()  
 
         test_nb(train_data, test_data)
-        # vectorize(train_data, test_data)
+        test_knn(train_data, test_data)
 
 if __name__ == "__main__":
     main()
