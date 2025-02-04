@@ -315,7 +315,8 @@ def run_tests(data: str, classifiers: dict) -> None:
 
 def evaluate_configuration(method, train_data, test_data, stop_words, params):
     # Execute the method with the given parameters and return the f1 score
-    accuracy, precision, recall, f1 = method(train_data, test_data, **params)
+    tp, tn, fp, fn = method(train_data, test_data, **params)
+    accuracy, precision, recall, f1 = calculate_statistics(tp, tn, fp, fn)
     result = f"{method.__name__}({stop_words}, {params}): {f1}%\n"
     print(result,end='')
     return result
@@ -354,7 +355,7 @@ def find_value(data_file: object, method: callable, stop_word_top_mille: range, 
             for task in concurrent.futures.as_completed(all_tasks):
                 try:
                     result = task.result()
-                    with open("classifier/values.txt", 'w') as results:
+                    with open("classifier/values.txt", 'a') as results:
                         results.write(result)
                 except Exception as e:
                     print(f"{e}")
@@ -367,7 +368,7 @@ def main() -> None:
     # Experiment with different values using find_value()
     classifiers = {"Naive Bayes": (test_nb, 5), "K-Nearest Neighbor": (test_knn, 1000, {'k':5})}
     
-    find_value(data, test_knn, range(1000, 1001), {'k':range(1,11)})
+    find_value(data, test_knn, range(1000, 1001), {'k':range(1,21)})
     #run_tests(data, classifiers) 
 
 if __name__ == "__main__":
