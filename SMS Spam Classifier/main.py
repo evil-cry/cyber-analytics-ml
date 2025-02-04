@@ -54,6 +54,49 @@ def vectorize(train_data: list, test_data: list):
         
     return train_feature_vectors, test_feature_vectors
     
+def tokenize(corpus) -> list:
+    stop_words = set(["a", "an", "the", "and", "or", "but", "if", "then", "else", "for", "on", "in", "with", "as", "by", "at", "to", "from", "up", "down", "out", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"])
+    tokenized_corpus = []
+
+    for document in corpus:
+        tokens = document.split('\t', 1) 
+        classification = tokens[0]
+        tokens = tokens[1].split(' ') # Remove classification column
+
+        # Cleaning tokens
+        tokens = [token.lower() for token in tokens] # Lowercase all tokens
+        tokens = [token.translate(str.maketrans('', '', string.punctuation)) for token in tokens] # Remove punctuation
+        # tokens = [token for token in tokens if token.isalpha()] # Remove non-alphabetic tokens
+        tokens = [token for token in tokens if token not in stop_words] # Remove stop words
+        
+        tokenized_corpus.append((classification, tokens))
+
+    return tokenized_corpus
+
+def calculate_statistics(model='None', tp=0, tn=0, fp=0, fn=0):
+    try:
+        accuracy = (tp + tn) / (tp + fp + tn + fn)
+        precision = tp / (tp + fp)
+        recall = tp / (tp + fn)
+        f1 = 2 * (precision * recall) / (precision + recall) 
+        
+        accuracy = f"{accuracy * 100:.6f}%"
+        precision = f"{precision * 100:.6f}%"
+        recall = f"{recall * 100:.6f}%"
+        f1 = f"{f1 * 100:.6f}%"
+    except ZeroDivisionError:
+        tp=0
+        tn=0
+        fp=0
+        fn=0
+
+    print(f'{model}:')
+    print(f'Accuracy: {accuracy}')
+    print(f'Precision: {precision}')
+    print(f'Recall: {recall}')
+    print(f'F1: {f1}')
+    print()
+
 # Calculates the similarity between two vectors
 def cosine_sim(vec1, vec2):
     # Calculate dot product 
@@ -92,57 +135,6 @@ def k_nn(train_vectors, train_labels, test_vector, k=5):
     else:
         return 'ham'
     
-    
-def test_knn(train_data: list, test_data: list, k=5) -> None:
-    tp = 0
-    fp = 0
-    tn = 0
-    fn = 0
-
-    count = 0
-    
-    # Get Vectors from Vecotrize and create the labels
-    train_vectors, test_vectors = vectorize(train_data, test_data)
-    train_labels = np.array([doc[0] for doc in train_data])
-    test_labels = np.array([doc[0] for doc in test_data])
-    
-    # Converts to Numpy arrays to make faster
-    train_vectors = np.array(train_vectors)
-    test_vectors = np.array(test_vectors)
-    
-    # Classify each instance
-    for test_v, label in zip(test_vectors, test_labels):
-        prediction = k_nn(train_vectors, train_labels, test_v, k)
-        
-        if prediction == 'spam' and label == 'spam':
-            tp += 1
-        elif prediction == 'spam' and label == 'ham':
-            fp += 1
-        elif prediction == 'ham' and label == 'ham':
-            tn += 1
-        elif prediction == 'ham' and label == 'spam':
-            fn += 1
-    
-    # Final Calculations
-    accuracy = (tp + tn) / (tp + fp + tn + fn)
-    precision = tp / (tp + fp)
-    recall = tp / (tp + fn)
-    f1 = 2 * (precision * recall) / (precision + recall) 
-    
-    accuracy = f"{accuracy * 100:.6f}%"
-    precision = f"{precision * 100:.6f}%"
-    recall = f"{recall * 100:.6f}%"
-    f1 = f"{f1 * 100:.6f}%"
-    
-    # Output Final Calculations
-    print('\n\nK_nn Model\n')
-    print(f'accuracy: {accuracy}')
-    print(f'precision: {precision}')
-    print(f'recall: {recall}')
-    print(f'f1: {f1}')
-    
-    pass
-
 def nb(corpus: list, sample: str) -> str:
     spam_count = 0
     ham_count = 0
@@ -205,6 +197,36 @@ def nb(corpus: list, sample: str) -> str:
 
     else: 
         return 'unknown'
+    
+def test_knn(train_data: list, test_data: list, k=5) -> None:
+    tp = 0
+    fp = 0
+    tn = 0
+    fn = 0
+    
+    # Get Vectors from Vecotrize and create the labels
+    train_vectors, test_vectors = vectorize(train_data, test_data)
+    train_labels = np.array([doc[0] for doc in train_data])
+    test_labels = np.array([doc[0] for doc in test_data])
+    
+    # Converts to Numpy arrays to make faster
+    train_vectors = np.array(train_vectors)
+    test_vectors = np.array(test_vectors)
+    
+    # Classify each instance
+    for test_v, label in zip(test_vectors, test_labels):
+        prediction = k_nn(train_vectors, train_labels, test_v, k)
+        
+        if prediction == 'spam' and label == 'spam':
+            tp += 1
+        elif prediction == 'spam' and label == 'ham':
+            fp += 1
+        elif prediction == 'ham' and label == 'ham':
+            tn += 1
+        elif prediction == 'ham' and label == 'spam':
+            fn += 1
+
+    return tp, tn, fp, fn
 
 def test_nb(train_data: list, test_data: list) -> None:
     tp = 0
@@ -236,42 +258,10 @@ def test_nb(train_data: list, test_data: list) -> None:
         if count > 200:
                 break
 
-    accuracy = (tp + tn) / (tp + fp + tn + fn)
-    precision = tp / (tp + fp)
-    recall = tp / (tp + fn)
-    f1 = 2 * (precision * recall) / (precision + recall)
-
-    accuracy = f"{accuracy * 100:.6f}%"
-    precision = f"{precision * 100:.6f}%"
-    recall = f"{recall * 100:.6f}%"
-    f1 = f"{f1 * 100:.6f}%"
-
-    print(f'accuracy: {accuracy}')
-    print(f'precision: {precision}')
-    print(f'recall: {recall}')
-    print(f'f1: {f1}')
-
-def tokenize(corpus) -> list:
-    stop_words = set(["a", "an", "the", "and", "or", "but", "if", "then", "else", "for", "on", "in", "with", "as", "by", "at", "to", "from", "up", "down", "out", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"])
-    tokenized_corpus = []
-
-    for document in corpus:
-        tokens = document.split('\t', 1) 
-        classification = tokens[0]
-        tokens = tokens[1].split(' ') # Remove classification column
-
-        # Cleaning tokens
-        tokens = [token.lower() for token in tokens] # Lowercase all tokens
-        tokens = [token.translate(str.maketrans('', '', string.punctuation)) for token in tokens] # Remove punctuation
-        # tokens = [token for token in tokens if token.isalpha()] # Remove non-alphabetic tokens
-        tokens = [token for token in tokens if token not in stop_words] # Remove stop words
-        
-        tokenized_corpus.append((classification, tokens))
-
-    return tokenized_corpus
+    return tp, tn, fp, fn
 
 def main() -> None:
-    with open("Corpus/SMSSpamCollection", 'r') as file:
+    with open("Corpus/SMSSpamCollection", 'r', encoding='utf-8') as file:
         corpus = tokenize(file)
 
         data = pd.DataFrame(corpus)
@@ -279,10 +269,13 @@ def main() -> None:
         test_data = data.drop(train_data.index)
 
         train_data = train_data.to_numpy().tolist()
-        test_data = test_data.to_numpy().tolist()  
+        test_data = test_data.to_numpy().tolist()
+        
+        tp,tn,fp,fn = test_nb(train_data, test_data)
+        calculate_statistics('Naive Bayes', tp, tn, fp, fn)
 
-        test_nb(train_data, test_data)
-        test_knn(train_data, test_data)
+        tp,tn,fp,fn = test_knn(train_data, test_data)
+        calculate_statistics('K-Nearest Neighbor', tp, tn, fp, fn)
 
 if __name__ == "__main__":
     main()
