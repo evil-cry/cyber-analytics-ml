@@ -282,11 +282,13 @@ def test_nb(train_data: list, test_data: list) -> None:
     return tp, tn, fp, fn
 
 def main() -> None:
+    # Generate the stop words separately - it somehow breaks the file if done in the tokenizer
     stop_words = None
     with open("Corpus/SMSSpamCollection", 'r', encoding='utf-8') as file:
-        top = 0.005
+        top = 0.005 # Found the best percentage by trial and error
         stop_words = find_stop_words(file, top)
         print(f'Stop words removed - top {top}%')
+        print()
 
     with open("Corpus/SMSSpamCollection", 'r', encoding='utf-8') as file:
         corpus = tokenize(file, stop_words)
@@ -301,8 +303,8 @@ def main() -> None:
         tp,tn,fp,fn = test_nb(train_data, test_data)
         calculate_statistics('Naive Bayes', tp, tn, fp, fn)
 
-        #tp,tn,fp,fn = test_knn(train_data, test_data)
-        #calculate_statistics('K-Nearest Neighbor', tp, tn, fp, fn)
+        tp,tn,fp,fn = test_knn(train_data, test_data)
+        calculate_statistics('K-Nearest Neighbor', tp, tn, fp, fn)
 
 if __name__ == "__main__":
     main()
