@@ -295,12 +295,11 @@ def run_test(data_file: str, method: callable, name: str, stop_word_top_mille: f
         tp, tn, fp, fn = method(train_data, test_data, **parameters)
         accuracy, precision, recall, f1 = calculate_statistics(tp, tn, fp, fn)
 
-        print(f'{name}:')
-        print(f'Accuracy: {accuracy}')
-        print(f'Precision: {precision}')
-        print(f'Recall: {recall}')
-        print(f'F1: {f1}')
-        print()
+        result = f"{name}: \nAccuracy: {accuracy}\nPrecision: {precision}\nRecall: {recall}\nF1: {f1}\n\n"
+
+        print(f'{result}')
+        with open("classifier/results.txt", 'a') as results:
+            results.write(result)
         
     else:
         print(f"{method} not found.")
@@ -313,7 +312,7 @@ def run_tests(data: str, classifiers: dict) -> None:
 
         run_test(data, method, name, stop_word_top_mille, parameters)
 
-def evaluate_configuration(method, train_data, test_data, stop_words, params):
+def _evaluate_configuration(method, train_data, test_data, stop_words, params):
     # Execute the method with the given parameters and return the f1 score
     tp, tn, fp, fn = method(train_data, test_data, **params)
     accuracy, precision, recall, f1 = calculate_statistics(tp, tn, fp, fn)
@@ -335,7 +334,7 @@ def find_value(data_file: object, method: callable, stop_word_top_mille: range, 
 
                 def recursive_call(train_data, test_data, stop_words, params):
                     if not params.keys():
-                        future = executor.submit(evaluate_configuration, method, train_data, test_data, stop_word, params) # Run the process
+                        future = executor.submit(_evaluate_configuration, method, train_data, test_data, stop_word, params) # Run the process
                         all_tasks.append(future)
                         return
                     
@@ -344,7 +343,7 @@ def find_value(data_file: object, method: callable, stop_word_top_mille: range, 
                     if not isinstance(params[current_key], range):
                         # Base case
                         params_copy = copy.deepcopy(params)  # Isolate parameters for each process
-                        future = executor.submit(evaluate_configuration, method, train_data, test_data, stop_word, params_copy)
+                        future = executor.submit(_evaluate_configuration, method, train_data, test_data, stop_word, params_copy)
                         all_tasks.append(future)
                         return
 
@@ -379,7 +378,7 @@ def main() -> None:
     #find_value(data, test_knn, range(500, 601, 10), {'k':range(7,8)})
     #find_value(data, test_nb, range(0, 10), {})
 
-    #run_tests(data, classifiers) 
+    run_tests(data, classifiers) 
 
 if __name__ == "__main__":
     main()
