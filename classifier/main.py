@@ -334,12 +334,17 @@ def find_value(data_file: object, method: callable, stop_word_top_mille: range, 
                 train_data, test_data = get_data(data_file, stop_words)
 
                 def recursive_call(train_data, test_data, stop_words, params):
+                    if not params.keys():
+                        future = executor.submit(evaluate_configuration, method, train_data, test_data, stop_word, params) # Run the process
+                        all_tasks.append(future)
+                        return
+                    
                     current_key = list(params.keys())[0]
 
                     if not isinstance(params[current_key], range):
                         # Base case
                         params_copy = copy.deepcopy(params)  # Isolate parameters for each process
-                        future = executor.submit(evaluate_configuration, method, train_data, test_data, stop_word, params_copy) # Run the process
+                        future = executor.submit(evaluate_configuration, method, train_data, test_data, stop_word, params_copy)
                         all_tasks.append(future)
                         return
 
@@ -359,16 +364,21 @@ def find_value(data_file: object, method: callable, stop_word_top_mille: range, 
                         results.write(result)
                 except Exception as e:
                     print(f"{e}")
-
     else:
         print("Something went wrong in find_value.")
+    
+    with open("classifier/values.txt", 'a') as results:
+        results.write('\n')
 
 def main() -> None:
     data = "corpus/SMSSpamCollection"
     # Experiment with different values using find_value()
-    classifiers = {"Naive Bayes": (test_nb, 5), "K-Nearest Neighbor": (test_knn, 1000, {'k':5})}
+    # See values.txt for results - these parameters are most optimal
+    classifiers = {"Naive Bayes": (test_nb, 5), "K-Nearest Neighbor": (test_knn, 500, {'k':7})}
     
-    find_value(data, test_knn, range(1000, 1001), {'k':range(1,21)})
+    #find_value(data, test_knn, range(500, 601, 10), {'k':range(7,8)})
+    #find_value(data, test_nb, range(0, 10), {})
+
     #run_tests(data, classifiers) 
 
 if __name__ == "__main__":
