@@ -55,26 +55,42 @@ def vectorize(train_data: list, test_data: list):
         
     return train_feature_vectors, test_feature_vectors
 
-def find_stop_words(data, top):
-    actual_words = {}
-    for line in data:
-        words = re.split('[^a-zA-Z]', line)
+def find_stop_words(data: str, top: float):
+    # Generate the stop words here - the file wrapper breaks if done in the tokenizer
+    stop_words = None
+    with open(data, 'r', encoding='utf-8') as file:
+        actual_words = {}
+        for line in file:
+            words = re.split('[^a-zA-Z]', line)
 
-        for word in words:
-            if word:
-                if word in actual_words:
-                    actual_words[word] += 1
-                else:
-                    actual_words[word] = 1
+            for word in words:
+                if word:
+                    if word in actual_words:
+                        actual_words[word] += 1
+                    else:
+                        actual_words[word] = 1
 
-    sorted_words = sorted(actual_words.items(), key=lambda item: item[1], reverse=True)
-    num_words = len(sorted_words)
-    top_20_percent = int(num_words * (top))
-    stop_words = [word for word, count in actual_words.items()  if count > top_20_percent]
+        sorted_words = sorted(actual_words.items(), key=lambda item: item[1], reverse=True)
+        num_words = len(sorted_words)
+        top_20_percent = int(num_words * (top / 1000))
+        stop_words = [word for word, count in actual_words.items()  if count > top_20_percent]
+        
+        return set(stop_words) 
+
+def get_data(data_file: str, stop_words: set) -> tuple:
+    with open(data_file, 'r', encoding='utf-8') as file:
+        corpus = tokenize(file, stop_words)
+
+        data = pd.DataFrame(corpus)
+        train_data = data.sample(frac=0.8, random_state=69)
+        test_data = data.drop(train_data.index)
+
+        train_data = train_data.to_numpy().tolist()
+        test_data = test_data.to_numpy().tolist()
+
+        return train_data, test_data
     
-    return set(stop_words) 
-    
-def tokenize(corpus, stop_words) -> list:
+def tokenize(corpus: object, stop_words: set) -> list:
     if not stop_words:
         stop_words = set(["a", "an", "the", "and", "or", "but", "if", "then", "else", "for", "on", "in", "with", "as", "by", "at", "to", "from", "up", "down", "out", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"])
 
@@ -94,48 +110,43 @@ def tokenize(corpus, stop_words) -> list:
 
     return tokenized_corpus
 
-def calculate_statistics(model='None', tp=0, tn=0, fp=0, fn=0):
+def calculate_statistics(tp:int=0, tn:int=0, fp:int=0, fn:int=0) -> tuple:
     try:
         accuracy = (tp + tn) / (tp + fp + tn + fn)
         precision = tp / (tp + fp)
         recall = tp / (tp + fn)
         f1 = 2 * (precision * recall) / (precision + recall) 
         
-        accuracy = f"{accuracy * 100:.6f}%"
-        precision = f"{precision * 100:.6f}%"
-        recall = f"{recall * 100:.6f}%"
-        f1 = f"{f1 * 100:.6f}%"
+        accuracy = f"{accuracy * 100:.3f}%"
+        precision = f"{precision * 100:.3f}%"
+        recall = f"{recall * 100:.3f}%"
+        f1 = f"{f1 * 100:.3f}%"
     except ZeroDivisionError:
         accuracy = 0
         precision = 0
         recall = 0
         f1 = 0
 
-    print(f'{model}:')
-    print(f'Accuracy: {accuracy}')
-    print(f'Precision: {precision}')
-    print(f'Recall: {recall}')
-    print(f'F1: {f1}')
-    print()
+    return accuracy, precision, recall, f1
 
-# Calculates the similarity between two vectors
-def cosine_sim(vec1, vec2):
-    # Calculate dot product 
-    dproduct = np.dot(vec1,vec2)
-    
-    # Caculate Magnitudes
-    norm1 = np.linalg.norm(vec1)
-    norm2 = np.linalg.norm(vec2)
-    
-    # Stops "scalar divide" error from occuring
-    if norm1 == 0 or norm2 == 0:
-        return 0
-    
-    final = dproduct/(norm1*norm2)
-    return final
+def knn(train_vectors: np.array, train_labels: np.array, test_vector: np.array, k: int = 5) -> string:
+    # Calculates the similarity between two vectors
+    def cosine_sim(vec1, vec2):
+        # Calculate dot product 
+        dproduct = np.dot(vec1,vec2)
+        
+        # Caculate Magnitudes
+        norm1 = np.linalg.norm(vec1)
+        norm2 = np.linalg.norm(vec2)
+        
+        # Stops "scalar divide" error from occuring
+        if norm1 == 0 or norm2 == 0:
+            return 0
+        
+        final = dproduct/(norm1*norm2)
+        return final
 
-def k_nn(train_vectors, train_labels, test_vector, k=5):
-    # Considers 5 neighbors
+    # Considers k neighbors
     # Compute distances between test_vector and all train_vectors
     distances = []
     for i, train_vec in enumerate(train_vectors):
@@ -184,9 +195,8 @@ def nb(corpus: list, sample: str) -> str:
     w_spam_count = Counter(w_spam)
     w_ham_count = Counter(w_ham)
 
-    # Get vocabulary, vocabulary size, and alpha
+    # Get vocabulary and alpha
     w = set(w_spam + w_ham)
-    s = len(w)
     a = 1
 
     # Calculate the probability of the sample being spam or ham
@@ -219,11 +229,8 @@ def nb(corpus: list, sample: str) -> str:
     else: 
         return 'unknown'
     
-def test_knn(train_data: list, test_data: list, k=5) -> None:
-    tp = 0
-    fp = 0
-    tn = 0
-    fn = 0
+def test_knn(train_data: list, test_data: list, k=5) -> tuple:
+    tp = tn = fp = fn = 0
     
     # Get Vectors from Vecotrize and create the labels
     train_vectors, test_vectors = vectorize(train_data, test_data)
@@ -236,7 +243,7 @@ def test_knn(train_data: list, test_data: list, k=5) -> None:
     
     # Classify each instance
     for test_v, label in zip(test_vectors, test_labels):
-        prediction = k_nn(train_vectors, train_labels, test_v, k)
+        prediction = knn(train_vectors, train_labels, test_v, k)
         
         if prediction == 'spam' and label == 'spam':
             tp += 1
@@ -249,13 +256,8 @@ def test_knn(train_data: list, test_data: list, k=5) -> None:
 
     return tp, tn, fp, fn
 
-def test_nb(train_data: list, test_data: list) -> None:
-    tp = 0
-    fp = 0
-    tn = 0
-    fn = 0
-
-    count = 0
+def test_nb(train_data: list, test_data: list) -> tuple:
+    tp = tn = fp = fn = count = 0
 
     for document in test_data:
         classification = document[0]
@@ -281,30 +283,92 @@ def test_nb(train_data: list, test_data: list) -> None:
 
     return tp, tn, fp, fn
 
-def main() -> None:
-    # Generate the stop words separately - it somehow breaks the file if done in the tokenizer
-    stop_words = None
-    with open("Corpus/SMSSpamCollection", 'r', encoding='utf-8') as file:
-        top = 0.005 # Found the best percentage by trial and error
-        stop_words = find_stop_words(file, top)
-        print(f'Stop words removed - top {top}%')
+def run_test(data_file: str, method: callable, name: str, stop_word_top_mille: float, parameters: dict) -> None:
+    if callable(method):
+        stop_words = find_stop_words(data_file, stop_word_top_mille)
+        print(f'Stop words removed - top {stop_word_top_mille}‰')
+        if parameters:
+            print(parameters)
+
+        train_data, test_data = get_data(data_file, stop_words)
+
+        tp, tn, fp, fn = method(train_data, test_data, **parameters)
+        accuracy, precision, recall, f1 = calculate_statistics(tp, tn, fp, fn)
+
+        print(f'{name}:')
+        print(f'Accuracy: {accuracy}')
+        print(f'Precision: {precision}')
+        print(f'Recall: {recall}')
+        print(f'F1: {f1}')
         print()
-
-    with open("Corpus/SMSSpamCollection", 'r', encoding='utf-8') as file:
-        corpus = tokenize(file, stop_words)
-
-        data = pd.DataFrame(corpus)
-        train_data = data.sample(frac=0.8, random_state=69)
-        test_data = data.drop(train_data.index)
-
-        train_data = train_data.to_numpy().tolist()
-        test_data = test_data.to_numpy().tolist()
         
-        tp,tn,fp,fn = test_nb(train_data, test_data)
-        calculate_statistics('Naive Bayes', tp, tn, fp, fn)
+    else:
+        print(f"{method} not found.")
 
-        tp,tn,fp,fn = test_knn(train_data, test_data)
-        calculate_statistics('K-Nearest Neighbor', tp, tn, fp, fn)
+def run_tests(data: str, classifiers: dict) -> None:
+    for name, classifier in classifiers.items():
+        # Unpack the classifiers with optional parameters, such as for knn
+        method, stop_word_top_mille, *parameters = classifier
+        parameters = parameters[0] if parameters else {}
+
+        run_test(data, method, name, stop_word_top_mille, parameters)
+
+def evaluate_configuration(method, train_data, test_data, stop_words, params):
+    # Execute the method with the given parameters and return the f1 score
+    accuracy, precision, recall, f1 = method(train_data, test_data, **params)
+    result = f"{method.__name__}({stop_words}, {params}): {f1}%\n"
+    print(result,end='')
+    return result
+
+def find_value(data_file: object, method: callable, stop_word_top_mille: range, parameters: dict, max_processes: int = 6) -> None:
+    import concurrent.futures
+    import copy
+
+    if callable(method) and isinstance(stop_word_top_mille, range) and isinstance(parameters, dict):
+        all_tasks = []
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=max_processes) as executor:
+            for stop_word in stop_word_top_mille:
+                stop_words = find_stop_words(data_file, stop_word)
+                train_data, test_data = get_data(data_file, stop_words)
+
+                def recursive_call(train_data, test_data, stop_words, params):
+                    current_key = list(params.keys())[0]
+
+                    if not isinstance(params[current_key], range):
+                        # Base case
+                        params_copy = copy.deepcopy(params)  # Isolate parameters for each process
+                        future = executor.submit(evaluate_configuration, method, train_data, test_data, stop_word, params_copy) # Run the process
+                        all_tasks.append(future)
+                        return
+
+                    for value in params[current_key]:
+                        params_copy = copy.deepcopy(params) 
+                        # Change the parameter to be a single value for method
+                        params_copy[current_key] = value
+                        # Recurse with remaining keys.
+                        recursive_call(train_data, test_data, stop_words, params_copy)
+
+                recursive_call(train_data, test_data, stop_words, parameters)
+
+            for task in concurrent.futures.as_completed(all_tasks):
+                try:
+                    result = task.result()
+                    with open("classifier/values.txt", 'w') as results:
+                        results.write(result)
+                except Exception as e:
+                    print(f"{e}")
+
+    else:
+        print("Something went wrong in find_value.")
+
+def main() -> None:
+    data = "corpus/SMSSpamCollection"
+    # Experiment with different values using find_value()
+    classifiers = {"Naive Bayes": (test_nb, 5), "K-Nearest Neighbor": (test_knn, 1000, {'k':5})}
+    
+    find_value(data, test_knn, range(1000, 1001), {'k':range(1,11)})
+    #run_tests(data, classifiers) 
 
 if __name__ == "__main__":
     main()
