@@ -2,6 +2,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 import string
+import re
 
 def vectorize(train_data: list, test_data: list):
     # Build vocabulary from training data
@@ -53,11 +54,31 @@ def vectorize(train_data: list, test_data: list):
         test_feature_vectors.append(feature_vector)
         
     return train_feature_vectors, test_feature_vectors
-    
-def tokenize(corpus) -> list:
-    stop_words = set(["a", "an", "the", "and", "or", "but", "if", "then", "else", "for", "on", "in", "with", "as", "by", "at", "to", "from", "up", "down", "out", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"])
-    tokenized_corpus = []
 
+def find_stop_words(data, top):
+    actual_words = {}
+    for line in data:
+        words = re.split('[^a-zA-Z]', line)
+
+        for word in words:
+            if word:
+                if word in actual_words:
+                    actual_words[word] += 1
+                else:
+                    actual_words[word] = 1
+
+    sorted_words = sorted(actual_words.items(), key=lambda item: item[1], reverse=True)
+    num_words = len(sorted_words)
+    top_20_percent = int(num_words * (top))
+    stop_words = [word for word, count in actual_words.items()  if count > top_20_percent]
+    
+    return set(stop_words) 
+    
+def tokenize(corpus, stop_words) -> list:
+    if not stop_words:
+        stop_words = set(["a", "an", "the", "and", "or", "but", "if", "then", "else", "for", "on", "in", "with", "as", "by", "at", "to", "from", "up", "down", "out", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"])
+
+    tokenized_corpus = []
     for document in corpus:
         tokens = document.split('\t', 1) 
         classification = tokens[0]
@@ -85,10 +106,10 @@ def calculate_statistics(model='None', tp=0, tn=0, fp=0, fn=0):
         recall = f"{recall * 100:.6f}%"
         f1 = f"{f1 * 100:.6f}%"
     except ZeroDivisionError:
-        tp=0
-        tn=0
-        fp=0
-        fn=0
+        accuracy = 0
+        precision = 0
+        recall = 0
+        f1 = 0
 
     print(f'{model}:')
     print(f'Accuracy: {accuracy}')
@@ -261,8 +282,14 @@ def test_nb(train_data: list, test_data: list) -> None:
     return tp, tn, fp, fn
 
 def main() -> None:
+    stop_words = None
     with open("Corpus/SMSSpamCollection", 'r', encoding='utf-8') as file:
-        corpus = tokenize(file)
+        top = 0.005
+        stop_words = find_stop_words(file, top)
+        print(f'Stop words removed - top {top}%')
+
+    with open("Corpus/SMSSpamCollection", 'r', encoding='utf-8') as file:
+        corpus = tokenize(file, stop_words)
 
         data = pd.DataFrame(corpus)
         train_data = data.sample(frac=0.8, random_state=69)
@@ -274,8 +301,8 @@ def main() -> None:
         tp,tn,fp,fn = test_nb(train_data, test_data)
         calculate_statistics('Naive Bayes', tp, tn, fp, fn)
 
-        tp,tn,fp,fn = test_knn(train_data, test_data)
-        calculate_statistics('K-Nearest Neighbor', tp, tn, fp, fn)
+        #tp,tn,fp,fn = test_knn(train_data, test_data)
+        #calculate_statistics('K-Nearest Neighbor', tp, tn, fp, fn)
 
 if __name__ == "__main__":
     main()
