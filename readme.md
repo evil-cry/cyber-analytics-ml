@@ -2,7 +2,8 @@
 
 This project implements spam detection using Naive Bayes and K-Nearest Neighbor classifiers.
 The report shows the process of creating them, and various experimentation with classifier settings.
-Final results are shown using neat  graphs.  
+Final results are shown using neat  graphs.
+The code is made to be very granular and allows to easily implement and additional classifiers.
 
 ## Setup
 1. Install all the libraries specified in classifier/requirements.txt
