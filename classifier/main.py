@@ -316,7 +316,7 @@ def _evaluate_configuration(method, train_data, test_data, stop_words, params):
     # Execute the method with the given parameters and return the f1 score
     tp, tn, fp, fn = method(train_data, test_data, **params)
     accuracy, precision, recall, f1 = calculate_statistics(tp, tn, fp, fn)
-    result = f"{method.__name__}({stop_words}, {params}): {f1}%\n"
+    result = f"{method.__name__}({stop_words}, {params}): {f1}\n"
     print(result,end='')
     return result
 
