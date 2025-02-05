@@ -1,12 +1,12 @@
-## Spam Detector classifiers
+## Spam Detector Classifiers
 
 This project implements spam detection using Naive Bayes and K-Nearest Neighbor classifiers.
 The report shows the process of creating them, and various experimentation with classifier settings.
 Final results are shown using neat  graphs.
-The code is made to be very granular and allows to easily implement and additional classifiers.
+The code is very granular and allows to easily implement and test additional classifiers.
 
 ## Setup
-1. Install all the libraries specified in classifier/requirements.txt
+1. Install all the libraries specified in _classifier/requirements.txt_
 2. If needed, adjust the _classifiers_ dictionary or the data path in _main()_ in _classifier/main.py_. This is not needed for the assignment - everything is already set up.
 3. The script will show accuracy, precision, recall and F1 scores for the given classifiers. It also puts the results in _classifier/results.txt_
 
