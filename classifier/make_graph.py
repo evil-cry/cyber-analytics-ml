@@ -1,7 +1,15 @@
+# AI Usage Statement
+# Tools Used: gpt-4o
+# - Usage: Regex generation
+# - Verification: Successful usage of regex to parse data
+# Prohibited Use Compliance: Confirmed
+
 import re
 import matplotlib.pyplot as plt
+import numpy as np
+import main as classifiers
 
-def parse_line(line: str) -> tuple:
+def parse_data(line: str) -> tuple:
     '''
     Parses a line of text and extracts method, stop word top mille, parameters, and F1 score.
     A data point must be in the format: method(stop_word_top_mille, {params}): f1%.
@@ -18,23 +26,25 @@ def parse_line(line: str) -> tuple:
     @exceptions:
         ValueError: If the line does not match the expected format.
     '''
-    pattern = r'(\w+)\((\d+),\s*({.*})\):\s*([\d.]+)%' # This was made using GPT-4o
+    pattern = r'(\w+)\(([\d.]+),\s*([\d.]+),\s*({.*})\):\s*([\d.]+)%'# This was made using GPT-4o
     match = re.match(pattern, line.strip())
     if not match:
         raise ValueError(f"Data format incorrect: {line}")
     
     method = match.group(1)
-    stop_word_top_mille = int(match.group(2))
-    params_str = match.group(3)
-    f1 = float(match.group(4))
+    stop_word_top_mille = float(match.group(2))
+    min_count = int(float(match.group(3)))
+    params_str = match.group(4)
+    f1 = float(match.group(5))
 
     params = eval(params_str)
-    return method, stop_word_top_mille, params, f1
+    return method, stop_word_top_mille, min_count, params, f1
 
 def determine_changing_key(data_points: list) -> str:
     '''
     Determines which key in the data points is changing.
     Returns the first changing parameter it finds.
+    Ignores minimum count because changing it didn't change performance.
     @params:
         data_points (list): A list of dictionaries, with the following key:value pairs:
             'method': str - The method name.
@@ -62,7 +72,7 @@ def determine_changing_key(data_points: list) -> str:
     return None # No key is changing
 
 
-def main() -> None:
+def plot_tests() -> None:
     '''
     Reads test data from a file, parses it and generates graphs.
     Data points must be located in 'classifier/values.txt'.
@@ -83,10 +93,11 @@ def main() -> None:
         
         for line in lines:
             try:
-                method, stop_word_top_mille, params, f1 = parse_line(line)
+                method, stop_word_top_mille, min_count, params, f1 = parse_data(line)
                 data_points.append({
                     'method': method,
                     'stop_word_top_mille': stop_word_top_mille,
+                    # Again, we don't care about min_count here
                     'params': params,
                     'f1': f1
                 })
@@ -135,5 +146,98 @@ def main() -> None:
         plt.savefig(f'graphs/{test_n}.png')
         plt.show()
 
+def _process_model(args: tuple) -> tuple:
+    '''
+    Processes a model and returns the F1 scores for training and test data.
+    @params:
+        args (tuple): A tuple containing arguments.
+            method (callable): model to use
+            train_subset (list): A list containing the training data
+            test_data (list): A list containing the test data
+            params (dict): A dictionary containing the parameters
+    @returns:
+        tuple: A tuple containing the F1 scores for training and test data.
+    '''
+    method, train_subset, test_data, params = args
+    
+    # Get scores for training data
+    tp, tn, fp, fn = method(train_subset, train_subset, **params)
+    _, _, _, f1_train = classifiers.calculate_statistics(tp, tn, fp, fn)
+    
+    # Get scores for test data
+    tp, tn, fp, fn = method(train_subset, test_data, **params)
+    _, _, _, f1_test = classifiers.calculate_statistics(tp, tn, fp, fn)
+    
+    train_n = float(f1_train.strip('%')) / 100
+    test_n = float(f1_test.strip('%'))  / 100
+
+    return (train_n, test_n)
+
+def plot_learning_curve(method: callable, data: list, params: dict) -> None:
+    '''
+    Plots learning curves to detect overfitting/underfitting using multiprocessing.
+    @params:
+        method (callable): The method to test.
+        data (list): The data to test on.
+        params (dict): Parameters for the method.
+    '''
+    from concurrent.futures import ProcessPoolExecutor
+    import copy
+
+    # Create training sizes from 10% to 100% of data
+    train_sizes = np.linspace(0.1, 1.0, 10)
+    
+    full_train_size = int(len(data) * 0.8)
+    full_test_data = data[full_train_size:]
+    
+    # Prepare arguments for processing
+    process_args = []
+    for train_size in train_sizes:
+        subset_size = int(full_train_size * train_size)
+        train_subset = copy.deepcopy(data[:subset_size])
+        process_args.append((method, train_subset, full_test_data, params))
+    
+    train_scores = []
+    test_scores = []
+    
+    with ProcessPoolExecutor(max_workers=6) as executor:
+        results = list(executor.map(_process_model, process_args))
+        
+    # Unpack results
+    train_scores, test_scores = zip(*results)
+    
+    # Plot results
+    plt.figure(figsize=(8, 6))
+    plt.plot(train_sizes * 100, train_scores, 'o-', label='Training score')
+    plt.plot(train_sizes * 100, test_scores, 'o-', label='Test score')
+    
+    plt.xlabel('Training set size (%)')
+    plt.ylabel('F1 Score')
+    plt.title(f'Learning Curve - {method.__name__}')
+    plt.legend(loc='best')
+    plt.grid(True)
+    
+    plt.savefig(f'graphs/learning_curve_{method.__name__}.png')
+    plt.show()
+
 if __name__ == "__main__":
-    main()
+    data = "corpus/SMSSpamCollection"
+
+    #plot_tests()
+
+    '''
+    I tried moving these two calls inside plot_learning_curve
+    When I did that, the resulting plot was hugely different from the current one
+    I could not figure out why that is happening - in both cases, the data is processed in the exact same way
+    I am losing my mind over this
+    '''
+
+    stop_words = classifiers.find_stop_words(data, 500, 0)
+    train_data, test_data = classifiers.get_data(data, stop_words)
+    plot_learning_curve(classifiers.test_knn, test_data + train_data, {'k': 1 })
+
+    '''
+    stop_words = classifiers.find_stop_words(data, 8, 0)
+    train_data, test_data = classifiers.get_data(data, stop_words)
+    plot_learning_curve(classifiers.test_nb, test_data + train_data, {'s': 4})
+    '''

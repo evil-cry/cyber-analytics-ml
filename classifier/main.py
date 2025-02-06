@@ -65,7 +65,16 @@ def vectorize(train_data: list, test_data: list):
         
     return train_feature_vectors, test_feature_vectors
 
-def find_stop_words(data: str, top: float):
+def find_stop_words(data: str, bottom: float, min_count: int = 0):
+    '''
+    Finds stop words based on how many times they appear in data
+    @params:
+        data (str): The path to the data file.
+        bottom (float): The bottom per mille of stop words that will be removed. (we are removing uncommon words)
+        min_count (int): Words with count less than this will be removed. Default is 2.
+    @returns:
+        set: A set of stop words.
+    '''
     # Generate the stop words here - the file wrapper breaks if done in the tokenizer
     stop_words = None
     with open(data, 'r', encoding='utf-8') as file:
@@ -82,8 +91,8 @@ def find_stop_words(data: str, top: float):
 
         sorted_words = sorted(actual_words.items(), key=lambda item: item[1], reverse=True)
         num_words = len(sorted_words)
-        top_20_percent = int(num_words * (top / 1000))
-        stop_words = [word for word, count in actual_words.items()  if count > top_20_percent]
+        bottom_mille = int(num_words * (bottom / 1000))
+        stop_words = [word for word, count in actual_words.items()  if count > bottom_mille and count > min_count]
         
         return set(stop_words) 
 
@@ -223,12 +232,13 @@ def knn(train_vectors: np.array, train_labels: np.array, test_vector: np.array, 
     else:
         return 'ham'
     
-def nb(corpus: list, sample: str) -> str:
+def nb(corpus: list, sample: str, s: float) -> str:
     '''
     Naive Bayes classifier that determines if a given message is spam or ham.
     @params
         corpus (list): A list of tuples with the classification ('spam' or 'ham') and the message.
         sample (str): The message to be classified.
+        s (float): laplace smoothing alpha.
 
     @returns:
         str: Prediction - 'spam', 'ham', or 'unknown'.
@@ -256,43 +266,37 @@ def nb(corpus: list, sample: str) -> str:
     w_spam = [word for msg in spam_corpus for word in msg]
     w_ham = [word for msg in ham_corpus for word in msg]
 
+    vocabluary = set(w_spam + w_ham)
+
     # Get count of each word in spam and ham messages
     w_spam_count = Counter(w_spam)
     w_ham_count = Counter(w_ham)
 
-    # Get vocabulary and alpha
-    w = set(w_spam + w_ham)
-    a = 1
+    # Instead of setting to 0, set to the log of the class prior
+    # Class prior is the base probability of each class
+    p_sample_spam = np.log(spam_count / len(corpus))
+    p_sample_ham = np.log(ham_count / len(corpus))
 
     # Calculate the probability of the sample being spam or ham
-    p_sample_spam = 0
-    p_sample_ham = 0
-
     for word in sample:        
         # Calculate the P(W_i|Spam) and P(W_i|Ham)
-        p_word_spam = (w_spam_count[word]) / (len(w_spam) + a)
-        p_word_ham = (w_ham_count[word]) / (len(w_ham) + a)
+        # Apply smoothing = add s to the numerator and 2 * s to the denominator
+        # Multiply by 2 because there are two categories
+        p_word_spam = ((w_spam_count[word]) + s) / (len(w_spam) + s * len(vocabluary))
+        p_word_ham = ((w_ham_count[word]) + s) / (len(w_ham) + s * len(vocabluary))
 
-        # Calculate the P(Spam) and P(Ham)
-        p_spam = spam_count / len(corpus) 
-        p_ham = ham_count / len(corpus)
+        # Use log instead
+        log_p_word_spam = np.log(p_word_spam)
+        log_p_word_ham = np.log(p_word_ham)
 
-        # Calculate the P(Spam|W_i) and P(Ham|W_i)
-        p_spam_word = p_spam * p_word_spam
-        p_ham_word = p_ham * p_word_ham
-
-        # Add to total P(W|Spam) and P(W|Ham)
-        p_sample_spam += p_spam_word
-        p_sample_ham += p_ham_word
+        # Add to total log probabilities
+        p_sample_spam += log_p_word_spam
+        p_sample_ham += log_p_word_ham
 
     if p_sample_spam > p_sample_ham:
         return 'spam'
-
-    elif p_sample_spam < p_sample_ham:
+    else:
         return 'ham'
-
-    else: 
-        return 'unknown'
     
 def test_knn(train_data: list, test_data: list, k=5) -> tuple:
     '''
@@ -333,12 +337,13 @@ def test_knn(train_data: list, test_data: list, k=5) -> tuple:
 
     return tp, tn, fp, fn
 
-def test_nb(train_data: list, test_data: list) -> tuple:
+def test_nb(train_data: list, test_data: list, s: float) -> tuple:
     '''
     Tests a Naive Bayes classifier.
     @params:
         train_data (list): A list of training data where each element is a tuple containing the classification ('spam' or 'ham') and the message.
         test_data (list): A list of test data where each element is a tuple containing the classification ('spam' or 'ham') and the message.
+        s (float): laplace smoothing alpha.
     @returns::
         tuple: A tuple containing four integers:
             - tp (int): True positives (correctly classified as spam).
@@ -346,13 +351,13 @@ def test_nb(train_data: list, test_data: list) -> tuple:
             - fp (int): False positives (incorrectly classified as spam).
             - fn (int): False negatives (incorrectly classified as ham).
     '''
-    tp = tn = fp = fn = count = 0
+    tp = tn = fp = fn = 0
 
     for document in test_data:
         classification = document[0]
         message = document[1]
 
-        result = nb(train_data, message)
+        result = nb(train_data, message, s)
 
         if (result == classification) and (classification == 'spam'):
             tp += 1
@@ -366,25 +371,21 @@ def test_nb(train_data: list, test_data: list) -> tuple:
         elif (result != classification) and (classification == 'ham'):
             fn += 1
 
-        count += 1
-        if count > 200:
-                break
-
     return tp, tn, fp, fn
 
-def run_test(data_file: str, method: callable, name: str, stop_word_top_mille: float, parameters: dict) -> None:
+def run_test(data_file: str, method: callable, name: str, stop_word_bottom_mille: float, min_count: int, parameters: dict) -> None:
     '''
     Runs a test for a classifier on given data using a specified classification method and parameters.
     @params
         data_file (str): Path to the data file.
         method (callable): The classifier test method.
         name (str): Name of the classifier.
-        stop_word_top_mille (int): The top per mille of stop words that will be removed.
+        stop_word_bottom_mille (int): The top per mille of stop words that will be removed.
         parameters (dict): A str:int dictionary of additional parameters.
     '''
     if callable(method):
-        stop_words = find_stop_words(data_file, stop_word_top_mille)
-        print(f'Stop words removed - top {stop_word_top_mille}‰')
+        stop_words = find_stop_words(data_file, stop_word_bottom_mille, min_count)
+        print(f'Stop words removed - bottom {stop_word_bottom_mille}‰. Removed words with less than {min_count} occurrences.')
         if parameters:
             print(parameters)
 
@@ -414,12 +415,12 @@ def run_tests(data: str, classifiers: dict) -> None:
     '''
     for name, classifier in classifiers.items():
         # Unpack the classifiers with optional parameters, such as for knn
-        method, stop_word_top_mille, *parameters = classifier
+        method, stop_word_bottom_mille, min_count, *parameters = classifier
         parameters = parameters[0] if parameters else {}
 
-        run_test(data, method, name, stop_word_top_mille, parameters)
+        run_test(data, method, name, stop_word_bottom_mille, min_count, parameters)
 
-def _evaluate_configuration(method: callable, train_data: list, test_data: list, stop_words: set, params: dict) -> str:
+def _evaluate_configuration(method: callable, train_data: list, test_data: list, stop_words: set, min_count: int, params: dict) -> str:
     '''
     Actually runs the classification test method.
     @params:
@@ -429,54 +430,59 @@ def _evaluate_configuration(method: callable, train_data: list, test_data: list,
         stop_words (set): a set of stop words
         params (dict): str:int dictionary of parameters 
     @returns:
-        str: A string in the format method(stop_word_top_mille, {params}): f1%.
-        Here, method is the method name, both parenthesis and the percentage sign are literal characters. stop_word_top_mille is an integer, params is a dictionary, and f1 is a float.
+        str: A string in the format method(stop_word_bottom_mille, {params}): f1%.
+        Here, method is the method name, both parenthesis and the percentage sign are literal characters. stop_word_bottom_mille is an integer, params is a dictionary, and f1 is a float.
         Params is a dictionary of str:int, where str is the parameter name and int is the parameter value. 
     '''
     # Execute the method with the given parameters and return the f1 score
     tp, tn, fp, fn = method(train_data, test_data, **params)
     accuracy, precision, recall, f1 = calculate_statistics(tp, tn, fp, fn)
-    result = f"{method.__name__}({stop_words}, {params}): {f1}\n"
+    result = f"{method.__name__}({stop_words}, {min_count}, {params}): {f1}\n"
     print(result,end='')
     return result
 
-def find_value(data_file: str, method: callable, stop_word_top_mille: range, parameters: dict, max_processes: int = 6) -> None:
+def find_value(data_file: str, method: callable, stop_word_bottom_mille: range, min_count: range, parameters: dict, max_processes: int = 6) -> None:
     '''
     Uses the provided classifer test method to evaluate the F1 score using given parameters.
     @params:
         data_file (str): Path to the data file
         method (callable): Classifier test method
-        stop_word_top_mille (range): A range of stop_word_top_mille values. If not the one being tested, make it a range that doesn't iterate, e.g range(0, 1)
+        stop_word_bottom_mille (range): A range of stop_word_bottom_mille values. If not the one being tested, make it a range that doesn't iterate, e.g range(0, 1)
         parameters (dict): A str:range dictionary of parameters.
         max_processes (int, optional): The maximum number of parallel processes to use. Defaults to 6.
+    @exceptions:
+        All exceptions are caught and printed to the console.
     '''
     import concurrent.futures
     import copy
 
-    if callable(method) and isinstance(stop_word_top_mille, range) and isinstance(parameters, dict):
-        all_tasks = []
+    all_tasks = []
 
-        with concurrent.futures.ProcessPoolExecutor(max_workers=max_processes) as executor:
-            for stop_word in stop_word_top_mille:
-                stop_words = find_stop_words(data_file, stop_word)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_processes) as executor:
+        for stop_word in stop_word_bottom_mille:
+            stop_word = float(stop_word)
+            for mc in min_count:
+                mc = float(mc)
+                stop_words = find_stop_words(data_file, stop_word, mc)
                 train_data, test_data = get_data(data_file, stop_words)
 
                 def recursive_call(train_data, test_data, stop_words, params):
                     if not params.keys():
-                        future = executor.submit(_evaluate_configuration, method, train_data, test_data, stop_word, params) # Run the process
+                        future = executor.submit(_evaluate_configuration, method, train_data, test_data, stop_word, mc, params) # Run the process
                         all_tasks.append(future)
                         return
                     
                     current_key = list(params.keys())[0]
 
-                    if not isinstance(params[current_key], range):
+                    if not isinstance(params[current_key], range) and not isinstance(params[current_key], np.ndarray):
                         # Base case
                         params_copy = copy.deepcopy(params)  # Isolate parameters for each process
-                        future = executor.submit(_evaluate_configuration, method, train_data, test_data, stop_word, params_copy)
+                        future = executor.submit(_evaluate_configuration, method, train_data, test_data, stop_word, mc, params_copy)
                         all_tasks.append(future)
                         return
 
                     for value in params[current_key]:
+                        value = float(value)
                         params_copy = copy.deepcopy(params) 
                         # Change the parameter to be a single value for method
                         params_copy[current_key] = value
@@ -485,27 +491,26 @@ def find_value(data_file: str, method: callable, stop_word_top_mille: range, par
 
                 recursive_call(train_data, test_data, stop_words, parameters)
 
-            for task in concurrent.futures.as_completed(all_tasks):
-                try:
-                    result = task.result()
-                    with open("classifier/values.txt", 'a') as results:
-                        results.write(result)
-                except Exception as e:
-                    print(f"{e}")
-    else:
-        print("Something went wrong in find_value.")
+        for task in concurrent.futures.as_completed(all_tasks):
+            result = task.result()
+            with open("classifier/values.txt", 'a') as results:
+                results.write(result)
     
     with open("classifier/values.txt", 'a') as results:
         results.write('\n')
 
 def main() -> None:
     data = "corpus/SMSSpamCollection"
+
+    with open("classifier/results.txt", 'w') as results:
+        results.write("")
+        
     # Experiment with different values using find_value()
     # See values.txt for results - these parameters are most optimal
-    classifiers = {"Naive Bayes": (test_nb, 5), "K-Nearest Neighbor": (test_knn, 500, {'k':7})}
-    
-    #find_value(data, test_knn, range(500, 601, 10), {'k':range(7,8)})
-    #find_value(data, test_nb, range(0, 10), {})
+    classifiers = {"Naive Bayes": (test_nb, 8, 0, {'s': 4}), "K-Nearest Neighbor": (test_knn, 500, 0, {'k':7})}
+
+    #find_value(data, test_knn, range(500,501), range(0, 21), {'k':range(7,8)})
+    #find_value(data, test_nb, range(8, 9), range(0, 1), {'s': np.arange(4, 5, 0.1)})
 
     run_tests(data, classifiers) 
 
