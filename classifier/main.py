@@ -266,28 +266,35 @@ def nb(corpus: list, sample: str, s: float) -> str:
     w_spam = [word for msg in spam_corpus for word in msg]
     w_ham = [word for msg in ham_corpus for word in msg]
 
+    vocabluary = set(w_spam + w_ham)
+
     # Get count of each word in spam and ham messages
     w_spam_count = Counter(w_spam)
     w_ham_count = Counter(w_ham)
 
-    # Get vocabulary and alpha
-    w = set(w_spam + w_ham)
-    a = 1
-
-    # Calculate the probability of the sample being spam or ham
+    '''
     p_sample_spam = 0
     p_sample_ham = 0
+    '''
 
+    # Instead of setting to 0, set to the log of the class prior
+    # Class prior is the base probability of each class
+    p_sample_spam = np.log(spam_count / len(corpus))
+    p_sample_ham = np.log(ham_count / len(corpus))
+
+    # Calculate the probability of the sample being spam or ham
     for word in sample:        
         # Calculate the P(W_i|Spam) and P(W_i|Ham)
-        # Add one for smoothing
-        p_word_spam = (w_spam_count[word]) + s / (len(w_spam) + a)
-        p_word_ham = (w_ham_count[word]) + s / (len(w_ham) + a)
+        # Apply smoothing = add s to the numerator and 2 * s to the denominator
+        # Multiply by 2 because there are two categories
+        p_word_spam = (w_spam_count[word]) + s / (len(w_spam) + s * len(vocabluary))
+        p_word_ham = (w_ham_count[word]) + s / (len(w_ham) + s * len(vocabluary))
 
         # Calculate the P(Spam) and P(Ham)
         p_spam = spam_count / len(corpus) 
         p_ham = ham_count / len(corpus)
 
+        '''
         # Calculate the P(Spam|W_i) and P(Ham|W_i)
         p_spam_word = p_spam * p_word_spam
         p_ham_word = p_ham * p_word_ham
@@ -295,15 +302,21 @@ def nb(corpus: list, sample: str, s: float) -> str:
         # Add to total P(W|Spam) and P(W|Ham)
         p_sample_spam += p_spam_word
         p_sample_ham += p_ham_word
+        '''
+
+
+        # Use log instead
+        log_p_word_spam = np.log(p_word_spam)
+        log_p_word_ham = np.log(p_word_ham)
+
+        # Add to total log probabilities
+        p_sample_spam += log_p_word_spam
+        p_sample_ham += log_p_word_ham
 
     if p_sample_spam > p_sample_ham:
         return 'spam'
-
-    elif p_sample_spam < p_sample_ham:
+    else:
         return 'ham'
-
-    else: 
-        return 'unknown'
     
 def test_knn(train_data: list, test_data: list, k=5) -> tuple:
     '''
@@ -517,9 +530,9 @@ def main() -> None:
     classifiers = {"Naive Bayes": (test_nb, 0.01, 0, {'s': 0.5}), "K-Nearest Neighbor": (test_knn, 500, 0, {'k':7})}
     
     #find_value(data, test_knn, range(500,501), range(0, 21), {'k':range(7,8)})
-    find_value(data, test_nb, np.arange(0, 1, 0.1), range(0, 1), {'s': np.arange(0, 1, 0.1)})
+    #find_value(data, test_nb, np.arange(0, 1, 0.1), range(0, 1), {'s': np.arange(0, 1, 0.1)})
 
-    #run_tests(data, classifiers) 
+    run_tests(data, classifiers) 
 
 if __name__ == "__main__":
     main()

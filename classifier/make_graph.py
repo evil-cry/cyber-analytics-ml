@@ -1,3 +1,9 @@
+# AI Usage Statement
+# Tools Used: gpt-4o
+# - Usage: Regex generation
+# - Verification: Successful usage of regex to parse data
+# Prohibited Use Compliance: Confirmed
+
 import re
 import matplotlib.pyplot as plt
 import numpy as np

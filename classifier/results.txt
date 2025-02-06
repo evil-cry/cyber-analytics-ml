@@ -1,0 +1,12 @@
+Naive Bayes: 
+Accuracy: 97.040%
+Precision: 88.281%
+Recall: 86.260%
+F1: 87.259%
+
+K-Nearest Neighbor: 
+Accuracy: 98.206%
+Precision: 98.214%
+Recall: 85.938%
+F1: 91.667%
+
