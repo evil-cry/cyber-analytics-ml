@@ -1,7 +1,9 @@
 import re
 import matplotlib.pyplot as plt
+import numpy as np
+import main as classifiers
 
-def parse_line(line: str) -> tuple:
+def parse_data(line: str) -> tuple:
     '''
     Parses a line of text and extracts method, stop word top mille, parameters, and F1 score.
     A data point must be in the format: method(stop_word_top_mille, {params}): f1%.
@@ -18,18 +20,19 @@ def parse_line(line: str) -> tuple:
     @exceptions:
         ValueError: If the line does not match the expected format.
     '''
-    pattern = r'(\w+)\((\d+),\s*({.*})\):\s*([\d.]+)%' # This was made using GPT-4o
+    pattern = r'(\w+)\((\d+),\s*(\d+),\s*({.*})\):\s*([\d.]+)%'# This was made using GPT-4o
     match = re.match(pattern, line.strip())
     if not match:
         raise ValueError(f"Data format incorrect: {line}")
     
     method = match.group(1)
     stop_word_top_mille = int(match.group(2))
-    params_str = match.group(3)
-    f1 = float(match.group(4))
+    min_count = int(match.group(3))
+    params_str = match.group(4)
+    f1 = float(match.group(5))
 
     params = eval(params_str)
-    return method, stop_word_top_mille, params, f1
+    return method, stop_word_top_mille, min_count, params, f1
 
 def determine_changing_key(data_points: list) -> str:
     '''
@@ -62,7 +65,7 @@ def determine_changing_key(data_points: list) -> str:
     return None # No key is changing
 
 
-def main() -> None:
+def plot_tests() -> None:
     '''
     Reads test data from a file, parses it and generates graphs.
     Data points must be located in 'classifier/values.txt'.
@@ -83,10 +86,11 @@ def main() -> None:
         
         for line in lines:
             try:
-                method, stop_word_top_mille, params, f1 = parse_line(line)
+                method, stop_word_top_mille, min_count, params, f1 = parse_data(line)
                 data_points.append({
                     'method': method,
                     'stop_word_top_mille': stop_word_top_mille,
+                    'min_count': min_count,
                     'params': params,
                     'f1': f1
                 })
@@ -135,5 +139,73 @@ def main() -> None:
         plt.savefig(f'graphs/{test_n}.png')
         plt.show()
 
+def plot_learning_curve(method: callable, data: list, params: dict) -> None:
+    '''
+    Plots learning curves to detect overfitting/underfitting.
+    @params:
+        method (callable): The method to test.
+        data (list): The data to test on.
+        params (dict): Parameters for the method.
+    '''
+
+    # Turns out converting results into strings directly inside test methods isn't the best idea
+    def percentage_to_float(str):
+        return float(str.strip('%')) / 100.0
+    
+    # Create training sizes from 10% to 100% of data
+    train_sizes = np.linspace(0.1, 1.0, 10)
+    train_scores = []
+    test_scores = []
+    
+    full_train_size = int(len(data) * 0.8)
+    full_test_data = data[full_train_size:] 
+    
+    for train_size in train_sizes:
+        # Take a subset of training data
+        subset_size = int(full_train_size * train_size)
+        train_subset = data[:subset_size]
+        
+        # Get scores for training data
+        tp, tn, fp, fn = method(train_subset, train_subset, **params)
+        _, _, _, f1_train = classifiers.calculate_statistics(tp, tn, fp, fn)
+        train_scores.append(percentage_to_float(f1_train))
+        
+        # Get scores for test data
+        tp, tn, fp, fn = method(train_subset, full_test_data, **params)
+        _, _, _, f1_test = classifiers.calculate_statistics(tp, tn, fp, fn)
+        test_scores.append(percentage_to_float(f1_test))
+    
+    plt.figure(figsize=(8, 6))
+    plt.plot(train_sizes * 100, train_scores, 'o-', label='Training score')
+    plt.plot(train_sizes * 100, test_scores, 'o-', label='Test score')
+    
+    plt.xlabel('Training set size (%)')
+    plt.ylabel('F1 Score')
+    plt.title(f'Learning Curve - {method.__name__}')
+    plt.legend(loc='best')
+    plt.grid(True)
+    
+    plt.savefig(f'graphs/learning_curve_{method.__name__}.png')
+    plt.show()
+
 if __name__ == "__main__":
-    main()
+    data = "corpus/SMSSpamCollection"
+
+    #plot_tests()
+
+    '''
+    I tried moving these two calls inside plot_learning_curve
+    When I did that, the resulting plot was hugely different from the current one
+    I could not figure out why that is happening - in both cases, the data is processed in the exact same way
+    I am losing my mind over this
+    '''
+
+    '''
+    stop_words = classifiers.find_stop_words(data, 5)
+    train_data, test_data = classifiers.get_data(data, stop_words)
+    plot_learning_curve(classifiers.test_nb, test_data + train_data, {})
+    '''
+    
+    stop_words = classifiers.find_stop_words(data, 1, 0)
+    train_data, test_data = classifiers.get_data(data, stop_words)
+    plot_learning_curve(classifiers.test_nb, test_data + train_data, {})
