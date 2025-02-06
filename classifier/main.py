@@ -5,6 +5,16 @@ import string
 import re
 
 def vectorize(train_data: list, test_data: list):
+    '''
+    Vectorizes training and testing data using TF-IDF (Term Frequency-Inverse Document Frequency).
+    @params:
+        train_data (list): A list of tuples where each tuple contains a document identifier and a list of words in the document.
+        test_data (list): A list of tuples where each tuple contains a document identifier and a list of words in the document.
+    @returns:
+        tuple: A tuple containing two lists:
+            - train_feature_vectors (list): A list of TF-IDF feature vectors for the training data.
+            - test_feature_vectors (list): A list of TF-IDF feature vectors for the test data.
+    '''
     # Build vocabulary from training data
     vocabulary = set()
     for document in train_data:
@@ -78,6 +88,18 @@ def find_stop_words(data: str, top: float):
         return set(stop_words) 
 
 def get_data(data_file: str, stop_words: set) -> tuple:
+    '''
+    Reads a data file, tokenizes it and splits into training and testing datasets.
+
+    @params:
+        data_file (str): The path to the data file.
+        stop_words (set): A set of stop words to be removed during tokenization.
+
+    @returns:
+        tuple: a tuple of two lists:
+            - train_data (list): The training dataset.
+            - test_data (list): The testing dataset.
+    '''
     with open(data_file, 'r', encoding='utf-8') as file:
         corpus = tokenize(file, stop_words)
 
@@ -91,6 +113,14 @@ def get_data(data_file: str, stop_words: set) -> tuple:
         return train_data, test_data
     
 def tokenize(corpus: object, stop_words: set) -> list:
+    '''
+    Tokenizes a corpus, removing stop words and punctuation.
+    @params:
+        corpus (object): A collection of documents, where each document is a string.
+        stop_words (set): A set of stop words to be removed from the documents. If not provided, a default set of common English stop words is used.
+    @returns:
+        list: A list of tuples, where each tuple contains the classification label and a list of tokens for each document.
+    '''
     if not stop_words:
         stop_words = set(["a", "an", "the", "and", "or", "but", "if", "then", "else", "for", "on", "in", "with", "as", "by", "at", "to", "from", "up", "down", "out", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"])
 
@@ -111,6 +141,22 @@ def tokenize(corpus: object, stop_words: set) -> list:
     return tokenized_corpus
 
 def calculate_statistics(tp:int=0, tn:int=0, fp:int=0, fn:int=0) -> tuple:
+    '''
+    Calculate performance statistics for a classification model.
+    @params:
+        tp (int): True Positives. Default is 0.
+        tn (int): True Negatives. Default is 0.
+        fp (int): False Positives. Default is 0.
+        fn (int): False Negatives. Default is 0.
+    @returns:
+    tuple: A tuple containing statistics as a turple of strings formatted to three decimal places:
+        - accuracy (str): The accuracy of the model as a percentage.
+        - precision (str): The precision of the model as a percentage.
+        - recall (str): The recall of the model as a percentage.
+        - f1 (str): The F1 score of the model as a percentage.
+    @exceptions:
+        If a ZeroDivisionError occurs during calculation, all statistics will be set to 0.
+    '''
     try:
         accuracy = (tp + tn) / (tp + fp + tn + fn)
         precision = tp / (tp + fp)
@@ -130,6 +176,16 @@ def calculate_statistics(tp:int=0, tn:int=0, fp:int=0, fn:int=0) -> tuple:
     return accuracy, precision, recall, f1
 
 def knn(train_vectors: np.array, train_labels: np.array, test_vector: np.array, k: int = 5) -> string:
+    '''
+    K-Nearest Neighbors classifier that determines if a given message is spam or ham..
+    @params:
+        train_vectors (np.array): Array of training vectors.
+        train_labels (np.array): Array of labels corresponding to the training vectors.
+        test_vector (np.array): The vector to classify.
+        k (int): The number of nearest neighbors to consider. Defaults to 5.
+    @returns:
+        str: Prediction, either 'spam' or 'ham'
+    '''
     # Calculates the similarity between two vectors
     def cosine_sim(vec1, vec2):
         # Calculate dot product 
@@ -168,6 +224,15 @@ def knn(train_vectors: np.array, train_labels: np.array, test_vector: np.array, 
         return 'ham'
     
 def nb(corpus: list, sample: str) -> str:
+    '''
+    Naive Bayes classifier that determines if a given message is spam or ham.
+    @params
+        corpus (list): A list of tuples with the classification ('spam' or 'ham') and the message.
+        sample (str): The message to be classified.
+
+    @returns:
+        str: Prediction - 'spam', 'ham', or 'unknown'.
+    '''
     spam_count = 0
     ham_count = 0
     spam_corpus = []
@@ -230,6 +295,18 @@ def nb(corpus: list, sample: str) -> str:
         return 'unknown'
     
 def test_knn(train_data: list, test_data: list, k=5) -> tuple:
+    '''
+    Tests a K-Nearest Neighbor classifier.
+    @params:
+        train_data (list): A list of training data where each element is a tuple containing the classification ('spam' or 'ham') and the message.
+        test_data (list): A list of test data where each element is a tuple containing the classification ('spam' or 'ham') and the message.
+    @returns::
+        tuple: A tuple containing four integers:
+            - tp (int): True positives (correctly classified as spam).
+            - tn (int): True negatives (correctly classified as ham).
+            - fp (int): False positives (incorrectly classified as spam).
+            - fn (int): False negatives (incorrectly classified as ham).
+    '''
     tp = tn = fp = fn = 0
     
     # Get Vectors from Vecotrize and create the labels
@@ -257,6 +334,18 @@ def test_knn(train_data: list, test_data: list, k=5) -> tuple:
     return tp, tn, fp, fn
 
 def test_nb(train_data: list, test_data: list) -> tuple:
+    '''
+    Tests a Naive Bayes classifier.
+    @params:
+        train_data (list): A list of training data where each element is a tuple containing the classification ('spam' or 'ham') and the message.
+        test_data (list): A list of test data where each element is a tuple containing the classification ('spam' or 'ham') and the message.
+    @returns::
+        tuple: A tuple containing four integers:
+            - tp (int): True positives (correctly classified as spam).
+            - tn (int): True negatives (correctly classified as ham).
+            - fp (int): False positives (incorrectly classified as spam).
+            - fn (int): False negatives (incorrectly classified as ham).
+    '''
     tp = tn = fp = fn = count = 0
 
     for document in test_data:
@@ -284,6 +373,15 @@ def test_nb(train_data: list, test_data: list) -> tuple:
     return tp, tn, fp, fn
 
 def run_test(data_file: str, method: callable, name: str, stop_word_top_mille: float, parameters: dict) -> None:
+    '''
+    Runs a test for a classifier on given data using a specified classification method and parameters.
+    @params
+        data_file (str): Path to the data file.
+        method (callable): The classifier test method.
+        name (str): Name of the classifier.
+        stop_word_top_mille (int): The top per mille of stop words that will be removed.
+        parameters (dict): A str:int dictionary of additional parameters.
+    '''
     if callable(method):
         stop_words = find_stop_words(data_file, stop_word_top_mille)
         print(f'Stop words removed - top {stop_word_top_mille}‰')
@@ -305,6 +403,15 @@ def run_test(data_file: str, method: callable, name: str, stop_word_top_mille: f
         print(f"{method} not found.")
 
 def run_tests(data: str, classifiers: dict) -> None:
+    '''
+    Runs tests for classifiers.
+    @params:
+        data (str): Path to the data file
+        classifiers (dict): A dictionary of classifiers to be tested.
+        The dictionary must be in the format {name: (method, int, optional_dict)
+        Here, name is the name of the classifier, method is the test method for that classifier, int is the top per mille words that will be removed, and optional_dict is a dictionary of parameters.
+        optional_dict is a dictionary of str:int, where str is the parameter name and int is the parameter value. 
+    '''
     for name, classifier in classifiers.items():
         # Unpack the classifiers with optional parameters, such as for knn
         method, stop_word_top_mille, *parameters = classifier
@@ -312,7 +419,20 @@ def run_tests(data: str, classifiers: dict) -> None:
 
         run_test(data, method, name, stop_word_top_mille, parameters)
 
-def _evaluate_configuration(method, train_data, test_data, stop_words, params):
+def _evaluate_configuration(method: callable, train_data: list, test_data: list, stop_words: set, params: dict) -> str:
+    '''
+    Actually runs the classification test method.
+    @params:
+        method (callable): Classifier test method to be ran. Must be return a tuple of 4 ints - (tp, tn, fp, fn).
+        train_data (list): Training data
+        test_data (list): Test data
+        stop_words (set): a set of stop words
+        params (dict): str:int dictionary of parameters 
+    @returns:
+        str: A string in the format method(stop_word_top_mille, {params}): f1%.
+        Here, method is the method name, both parenthesis and the percentage sign are literal characters. stop_word_top_mille is an integer, params is a dictionary, and f1 is a float.
+        Params is a dictionary of str:int, where str is the parameter name and int is the parameter value. 
+    '''
     # Execute the method with the given parameters and return the f1 score
     tp, tn, fp, fn = method(train_data, test_data, **params)
     accuracy, precision, recall, f1 = calculate_statistics(tp, tn, fp, fn)
@@ -320,7 +440,16 @@ def _evaluate_configuration(method, train_data, test_data, stop_words, params):
     print(result,end='')
     return result
 
-def find_value(data_file: object, method: callable, stop_word_top_mille: range, parameters: dict, max_processes: int = 6) -> None:
+def find_value(data_file: str, method: callable, stop_word_top_mille: range, parameters: dict, max_processes: int = 6) -> None:
+    '''
+    Uses the provided classifer test method to evaluate the F1 score using given parameters.
+    @params:
+        data_file (str): Path to the data file
+        method (callable): Classifier test method
+        stop_word_top_mille (range): A range of stop_word_top_mille values. If not the one being tested, make it a range that doesn't iterate, e.g range(0, 1)
+        parameters (dict): A str:range dictionary of parameters.
+        max_processes (int, optional): The maximum number of parallel processes to use. Defaults to 6.
+    '''
     import concurrent.futures
     import copy
 

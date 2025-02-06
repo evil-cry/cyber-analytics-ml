@@ -2,7 +2,7 @@ import re
 import matplotlib.pyplot as plt
 
 def parse_line(line: str) -> tuple:
-    """
+    '''
     Parses a line of text and extracts method, stop word top mille, parameters, and F1 score.
     A data point must be in the format: method(stop_word_top_mille, {params}): f1%.
     Here, method is the method name, both parenthesis and the percentage sign are literal characters. stop_word_top_mille is an integer, params is a dictionary, and f1 is a float.
@@ -17,7 +17,7 @@ def parse_line(line: str) -> tuple:
             f1 (float): The F1 score.
     @exceptions:
         ValueError: If the line does not match the expected format.
-    """
+    '''
     pattern = r'(\w+)\((\d+),\s*({.*})\):\s*([\d.]+)%' # This was made using GPT-4o
     match = re.match(pattern, line.strip())
     if not match:
@@ -32,7 +32,7 @@ def parse_line(line: str) -> tuple:
     return method, stop_word_top_mille, params, f1
 
 def determine_changing_key(data_points: list) -> str:
-    """
+    '''
     Determines which key in the data points is changing.
     Returns the first changing parameter it finds.
     @params:
@@ -43,7 +43,7 @@ def determine_changing_key(data_points: list) -> str:
             'f1': float - The F1 score.
     @returns:
         str: The key that has changing values, or None if no keys have changing values.
-    """
+    '''
     if not data_points:
         return None
     
@@ -63,14 +63,14 @@ def determine_changing_key(data_points: list) -> str:
 
 
 def main() -> None:
-    """
+    '''
     Reads test data from a file, parses it and generates graphs.
     Data points must be located in 'classifier/values.txt'.
     Distinct tests must be separated with two or more newlines.
     A data point must be in the format: method(stop_word_top_mille, {params}): f1%.
     Here, method is the method name, both parenthesis and the percentage sign are literal characters. stop_word_top_mille is an integer, params is a dictionary, and f1 is a float.
     Params is a dictionary of str:int, where str is the parameter name and int is the parameter value. 
-    """
+    '''
     filename = 'classifier/values.txt'
     with open(filename, 'r') as file:
         content = file.read()
