@@ -507,10 +507,10 @@ def main() -> None:
         
     # Experiment with different values using find_value()
     # See values.txt for results - these parameters are most optimal
-    classifiers = {"Naive Bayes": (test_nb, 8, 0, {'s': 0.7}), "K-Nearest Neighbor": (test_knn, 500, 0, {'k':7})}
-    
+    classifiers = {"Naive Bayes": (test_nb, 8, 0, {'s': 4}), "K-Nearest Neighbor": (test_knn, 500, 0, {'k':7})}
+
     #find_value(data, test_knn, range(500,501), range(0, 21), {'k':range(7,8)})
-    #find_value(data, test_nb, range(8, 9), range(0, 1), {'s': np.arange(0.1, 1, 0.1)})
+    #find_value(data, test_nb, range(8, 9), range(0, 1), {'s': np.arange(4, 5, 0.1)})
 
     run_tests(data, classifiers) 
 

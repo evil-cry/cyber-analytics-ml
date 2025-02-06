@@ -9,6 +9,7 @@ Final results are shown using neat graphs.
 1. Install all the libraries specified in [requirements.txt](classifier/requirements.txt)
 2. If needed, adjust the _classifiers_ dictionary or the data path in _main()_ in [main.py](classifier/main.py). This is not needed for the assignment - everything is already set up.
 3. The script will show accuracy, precision, recall and F1 scores for the given classifiers. It also puts the results [results.txt](classifier/results.txt)
+4. Note that you will need additional libraries not included in [requirements.txt](classifier/requirements.txt) if you plan to run testing or plotting methods. These are included in [optional_requirements.txt](classifier/optional_requirements.txt)
 
 ```sh
 pip install -r classifier/requirements.txt
