@@ -65,7 +65,7 @@ def vectorize(train_data: list, test_data: list):
         
     return train_feature_vectors, test_feature_vectors
 
-def find_stop_words(data: str, bottom: float, min_count: int = 2):
+def find_stop_words(data: str, bottom: float, min_count: int = 0):
     '''
     Finds stop words based on how many times they appear in data
     @params:
@@ -272,11 +272,6 @@ def nb(corpus: list, sample: str, s: float) -> str:
     w_spam_count = Counter(w_spam)
     w_ham_count = Counter(w_ham)
 
-    '''
-    p_sample_spam = 0
-    p_sample_ham = 0
-    '''
-
     # Instead of setting to 0, set to the log of the class prior
     # Class prior is the base probability of each class
     p_sample_spam = np.log(spam_count / len(corpus))
@@ -287,23 +282,8 @@ def nb(corpus: list, sample: str, s: float) -> str:
         # Calculate the P(W_i|Spam) and P(W_i|Ham)
         # Apply smoothing = add s to the numerator and 2 * s to the denominator
         # Multiply by 2 because there are two categories
-        p_word_spam = (w_spam_count[word]) + s / (len(w_spam) + s * len(vocabluary))
-        p_word_ham = (w_ham_count[word]) + s / (len(w_ham) + s * len(vocabluary))
-
-        # Calculate the P(Spam) and P(Ham)
-        p_spam = spam_count / len(corpus) 
-        p_ham = ham_count / len(corpus)
-
-        '''
-        # Calculate the P(Spam|W_i) and P(Ham|W_i)
-        p_spam_word = p_spam * p_word_spam
-        p_ham_word = p_ham * p_word_ham
-
-        # Add to total P(W|Spam) and P(W|Ham)
-        p_sample_spam += p_spam_word
-        p_sample_ham += p_ham_word
-        '''
-
+        p_word_spam = ((w_spam_count[word]) + s) / (len(w_spam) + s * len(vocabluary))
+        p_word_ham = ((w_ham_count[word]) + s) / (len(w_ham) + s * len(vocabluary))
 
         # Use log instead
         log_p_word_spam = np.log(p_word_spam)
@@ -527,10 +507,10 @@ def main() -> None:
         
     # Experiment with different values using find_value()
     # See values.txt for results - these parameters are most optimal
-    classifiers = {"Naive Bayes": (test_nb, 0.01, 0, {'s': 0.5}), "K-Nearest Neighbor": (test_knn, 500, 0, {'k':7})}
+    classifiers = {"Naive Bayes": (test_nb, 8, 0, {'s': 0.7}), "K-Nearest Neighbor": (test_knn, 500, 0, {'k':7})}
     
     #find_value(data, test_knn, range(500,501), range(0, 21), {'k':range(7,8)})
-    #find_value(data, test_nb, np.arange(0, 1, 0.1), range(0, 1), {'s': np.arange(0, 1, 0.1)})
+    #find_value(data, test_nb, range(8, 9), range(0, 1), {'s': np.arange(0.1, 1, 0.1)})
 
     run_tests(data, classifiers) 
 

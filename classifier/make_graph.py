@@ -207,11 +207,11 @@ if __name__ == "__main__":
     '''
 
     '''
-    stop_words = classifiers.find_stop_words(data, 5)
+    stop_words = classifiers.find_stop_words(data, 500, 0)
     train_data, test_data = classifiers.get_data(data, stop_words)
-    plot_learning_curve(classifiers.test_nb, test_data + train_data, {})
+    plot_learning_curve(classifiers.test_knn, test_data + train_data, {'k': 7 })
     '''
-    
-    stop_words = classifiers.find_stop_words(data, 1, 0)
+
+    stop_words = classifiers.find_stop_words(data, 8, 0)
     train_data, test_data = classifiers.get_data(data, stop_words)
-    plot_learning_curve(classifiers.test_nb, test_data + train_data, {})
+    plot_learning_curve(classifiers.test_nb, test_data + train_data, {'s': 0.7})
