@@ -1,4 +1,4 @@
-import classifier_tests as tests
+import classifiers
 import utils
 
 def main() -> None:
@@ -9,15 +9,15 @@ def main() -> None:
         
     # Experiment with different values using find_value()
     # See values.txt for results - these parameters are most optimal
-    classifiers = {"Naive Bayes": (tests.test_nb, 8, 0, {'s': 4}), "K-Nearest Neighbor": (tests.test_knn, 500, 0, {'k':7})}
-
-    ''' Example of value search
-    import numpy as np
-    utils.find_value(data, tests.test_knn, range(500,501), range(0, 21), {'k':range(7,8)})
-    utils.find_value(data, tests.test_nb, range(8, 9), range(0, 1), {'s': np.arange(4, 5, 0.1)})
-    '''
+    c = [classifiers.NB(data, "Naive Bayes", 8, 0, {'s': 4}), classifiers.KNN(data, "K-Nearest Neighbor", 500, 0, {'k':7})]
     
-    tests.run_tests(data, classifiers) 
+    for classifier in c:
+        accuracy, precision, recall, f1 = classifier.evaluate()
+        result = f"{classifier.name}: \nAccuracy: {accuracy * 100:.3f}%\nPrecision: {precision * 100:.3f}%\nRecall: {recall * 100:.3f}%\nF1: {f1 * 100:.3f}%\n\n"
+
+        print(result)
+        with open("spam_classification/docs/results.txt", 'a') as results:
+            results.write(result)
 
 if __name__ == "__main__":
     main()

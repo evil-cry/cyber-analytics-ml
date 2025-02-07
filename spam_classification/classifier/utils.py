@@ -149,41 +149,6 @@ def tokenize(corpus: object, stop_words: set) -> list:
 
     return tokenized_corpus
 
-def calculate_statistics(tp:int=0, tn:int=0, fp:int=0, fn:int=0) -> tuple:
-    '''
-    Calculate performance statistics for a classification model.
-    @params:
-        tp (int): True Positives. Default is 0.
-        tn (int): True Negatives. Default is 0.
-        fp (int): False Positives. Default is 0.
-        fn (int): False Negatives. Default is 0.
-    @returns:
-    tuple: A tuple containing statistics as a turple of strings formatted to three decimal places:
-        - accuracy (str): The accuracy of the model as a percentage.
-        - precision (str): The precision of the model as a percentage.
-        - recall (str): The recall of the model as a percentage.
-        - f1 (str): The F1 score of the model as a percentage.
-    @exceptions:
-        If a ZeroDivisionError occurs during calculation, all statistics will be set to 0.
-    '''
-    try:
-        accuracy = (tp + tn) / (tp + fp + tn + fn)
-        precision = tp / (tp + fp)
-        recall = tp / (tp + fn)
-        f1 = 2 * (precision * recall) / (precision + recall) 
-        
-        accuracy = f"{accuracy * 100:.3f}%"
-        precision = f"{precision * 100:.3f}%"
-        recall = f"{recall * 100:.3f}%"
-        f1 = f"{f1 * 100:.3f}%"
-    except ZeroDivisionError:
-        accuracy = 0
-        precision = 0
-        recall = 0
-        f1 = 0
-
-    return accuracy, precision, recall, f1
-
 def _evaluate_configuration(method: callable, train_data: list, test_data: list, stop_words: set, min_count: int, params: dict) -> str:
     '''
     Actually runs the classification test method.
