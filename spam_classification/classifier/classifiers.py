@@ -83,7 +83,7 @@ def nb(corpus: list, sample: str, s: float) -> str:
     w_spam = [word for msg in spam_corpus for word in msg]
     w_ham = [word for msg in ham_corpus for word in msg]
 
-    vocabluary = set(w_spam + w_ham)
+    vocab = set(w_spam + w_ham)
 
     # Get count of each word in spam and ham messages
     w_spam_count = Counter(w_spam)
@@ -99,8 +99,8 @@ def nb(corpus: list, sample: str, s: float) -> str:
         # Calculate the P(W_i|Spam) and P(W_i|Ham)
         # Apply smoothing = add s to the numerator and 2 * s to the denominator
         # Multiply by 2 because there are two categories
-        p_word_spam = ((w_spam_count[word]) + s) / (len(w_spam) + s * len(vocabluary))
-        p_word_ham = ((w_ham_count[word]) + s) / (len(w_ham) + s * len(vocabluary))
+        p_word_spam = ((w_spam_count[word]) + s) / (len(w_spam) + s * len(vocab))
+        p_word_ham = ((w_ham_count[word]) + s) / (len(w_ham) + s * len(vocab))
 
         # Use log instead
         log_p_word_spam = np.log(p_word_spam)

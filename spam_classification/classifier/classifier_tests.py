@@ -57,11 +57,13 @@ def test_nb(train_data: list, test_data: list, s: float) -> tuple:
     '''
     tp = tn = fp = fn = 0
 
+    model = classifiers.train_nb(train_data, s)
+
     for document in test_data:
         classification = document[0]
         message = document[1]
 
-        result = nb(train_data, message, s)
+        result = classifiers.classify_nb(model, message)
 
         if (result == classification) and (classification == 'spam'):
             tp += 1
