@@ -19,7 +19,5 @@ python3 spam_classification/classifier/main.py
 ```
 
 ### Value Search and Graphs
-1. If you need to find a parameter value that works best for a classifier, use _find_value()_
-2. Comment out _run_tests()_ in [main.py](spam_classification/classifier/main.py) and uncomment and existing _find_value()_ call or create a new one.
-3. The method will iterate over the value ranges provided by you and print F1 scores. It also appends the results to [values.txt](spam_classification/docs/values.txt)
-4. Once testing is done, [make_graph.py](spam_classification/classifier/make_graph.py) provides a way to plot line graphs based on test results. Disclaimer: the method currently only looks at the first value that it finds to be changing in a subset of the test results. It first looks at Stop Word ‰ Removed. If it changes, it will not look at other parameters! If not, it goes one by one through parameters until it finds the first one that changes.  
+1. If you need to find a parameter value that works best for a classifier, you are out of luck - the code was refactored and value tester no longer works. _make_graph()_ still works for old testing data.
+2. Once testing is done, [make_graph.py](spam_classification/classifier/make_graph.py) provides a way to plot line graphs based on test results. Disclaimer: the method currently only looks at the first value that it finds to be changing in a subset of the test results. It first looks at Stop Word ‰ Removed. If it changes, it will not look at other parameters! If not, it goes one by one through parameters until it finds the first one that changes.  

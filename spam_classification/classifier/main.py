@@ -1,15 +1,13 @@
 import classifiers
-import utils
 
 def main() -> None:
     data = "spam_classification/corpus/SMSSpamCollection"
 
     with open("spam_classification/docs/results.txt", 'w') as results:
         results.write("")
-        
-    # Experiment with different values using find_value()
-    # See values.txt for results - these parameters are most optimal
-    c = [classifiers.NB(data, "Naive Bayes", 8, 0, {'s': 4}), classifiers.KNN(data, "K-Nearest Neighbor", 500, 0, {'k':7})]
+
+    # These parameters were found to be most optimal
+    c = [classifiers.NB(data, 8, 0, {'s': 4}), classifiers.KNN(data, 500, 0, {'k':7})]
     
     for classifier in c:
         accuracy, precision, recall, f1 = classifier.evaluate()

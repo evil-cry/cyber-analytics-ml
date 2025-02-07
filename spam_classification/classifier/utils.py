@@ -149,6 +149,8 @@ def tokenize(corpus: object, stop_words: set) -> list:
 
     return tokenized_corpus
 
+# NO LONGER WORKS AFTER REFACTORING
+"""
 def _evaluate_configuration(method: callable, train_data: list, test_data: list, stop_words: set, min_count: int, params: dict) -> str:
     '''
     Actually runs the classification test method.
@@ -227,3 +229,4 @@ def find_value(data_file: str, method: callable, stop_word_bottom_mille: range, 
     
     with open("spam_classification/docs/values.txt", 'a') as results:
         results.write('\n')
+"""

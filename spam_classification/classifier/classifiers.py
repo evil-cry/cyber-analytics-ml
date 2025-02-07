@@ -3,9 +3,17 @@ from collections import Counter
 import utils
 
 class _Classifier():
-    def __init__(self, file_path: str, name: str, stop_words_per_mille: int, min_count: int, parameters: dict):
+    '''
+    Classifier class. This is an abstract class that should not be instantiated directly.
+    @params:
+        file_path (str): The path to the file containing the data.
+        name (str): The name of the classifier.
+        stop_words_per_mille (int): The bottom per mille of stop words to remove.
+        min_count (int): The minimum number of times a word must appear to be included in the vocabulary.
+        parameters (dict): A dictionary of parameters for the classifier.
+    '''
+    def __init__(self, file_path: str, stop_words_per_mille: int, min_count: int, parameters: dict):
         self.file_path = file_path
-        self.name = name
         self.stop_words_per_mille = stop_words_per_mille
         self.min_count = min_count
         self.parameters = parameters
@@ -17,6 +25,7 @@ class _Classifier():
         self.test_labels = np.array([doc[0] for doc in self.test_data])
 
         self.processed_test_data = None
+        self.name = "Abstract Classifier"
 
         self.model = {}
         self.train()
@@ -48,6 +57,8 @@ class _Classifier():
                 - fp (int): False positives (incorrectly classified as spam).
                 - fn (int): False negatives (incorrectly classified as ham).
         '''
+        tp = fp = tn = fn = 0
+
         for sample, label in zip(self.processed_test_data, self.test_labels):
                 prediction = self.classify(sample)
 
@@ -95,6 +106,7 @@ class KNN(_Classifier):
         super(KNN, self).__init__(*args, **kwargs)
 
         self.k = self.parameters['k'] if 'k' in self.parameters else 7
+        self.name = "K-Nearest Neighbors"
 
         # Get Vectors from Vecotrize and create the labels
         self.train_vectors, self.test_vectors = utils.vectorize(self.train_data, self.test_data)
@@ -147,11 +159,15 @@ class KNN(_Classifier):
             return 'ham'
 
 class NB(_Classifier):
+    '''
+    Naive Bayes Classifier
+    '''
     def __init__(self, *args, **kwargs):
         super(NB, self).__init__(*args, **kwargs)
 
         self.s = self.parameters['s'] if 's' in self.parameters else 4
-        self.processed_test_data = self.test_data
+        self.name = "Naive Bayes"
+        self.processed_test_data = [message[1] for message in self.test_data]
 
     def train(self):
         spam_count = 0
