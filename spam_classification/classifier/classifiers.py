@@ -1,54 +1,99 @@
 import numpy as np
 from collections import Counter
 
-def knn(train_vectors: np.array, train_labels: np.array, test_vector: np.array, k: int = 5) -> str:
-    '''
-    K-Nearest Neighbors classifier that determines if a given message is spam or ham..
-    @params:
-        train_vectors (np.array): Array of training vectors.
-        train_labels (np.array): Array of labels corresponding to the training vectors.
-        test_vector (np.array): The vector to classify.
-        k (int): The number of nearest neighbors to consider. Defaults to 5.
-    @returns:
-        str: Prediction, either 'spam' or 'ham'
-    '''
-    # Calculates the similarity between two vectors
-    def cosine_sim(vec1, vec2):
-        # Calculate dot product 
-        dproduct = np.dot(vec1,vec2)
+class KNN():
+    def __init__(self, stop_words_per_mille: int = 500, min_count: int = 0, parameters: dict = {'k': 7}):
+        self.stop_words_per_mille = stop_words_per_mille
+        self.min_count = min_count
+        self.parameters = parameters
         
-        # Caculate Magnitudes
-        norm1 = np.linalg.norm(vec1)
-        norm2 = np.linalg.norm(vec2)
-        
-        # Stops "scalar divide" error from occuring
-        if norm1 == 0 or norm2 == 0:
-            return 0
-        
-        final = dproduct/(norm1*norm2)
-        return final
+    def knn(self, train_vectors: np.array, train_labels: np.array, test_vector: np.array, k: int = 7) -> str:
+        '''
+        K-Nearest Neighbors classifier that determines if a given message is spam or ham..
+        @params:
+            train_vectors (np.array): Array of training vectors.
+            train_labels (np.array): Array of labels corresponding to the training vectors.
+            test_vector (np.array): The vector to classify.
+            k (int): The number of nearest neighbors to consider. Defaults to 7.
+        @returns:
+            str: Prediction, either 'spam' or 'ham'
+        '''
+        # Calculates the similarity between two vectors
+        def cosine_sim(vec1, vec2):
+            # Calculate dot product 
+            dproduct = np.dot(vec1,vec2)
+            
+            # Caculate Magnitudes
+            norm1 = np.linalg.norm(vec1)
+            norm2 = np.linalg.norm(vec2)
+            
+            # Stops "scalar divide" error from occuring
+            if norm1 == 0 or norm2 == 0:
+                return 0
+            
+            final = dproduct/(norm1*norm2)
+            return final
 
-    # Considers k neighbors
-    # Compute distances between test_vector and all train_vectors
-    distances = []
-    for i, train_vec in enumerate(train_vectors):
-        sim = cosine_sim(test_vector, train_vec)
-        distances.append((sim, train_labels[i]))  
-    
-    # Sort by descending order of similarity, selects the top (k) neighbors
-    distances.sort(reverse=True, key=lambda x: x[0])
-    neighbors = distances[:k]
-    
-    # Majority vote
-    spam_votes = sum(1 for _, label in neighbors if label == 'spam')
-    ham_votes = k - spam_votes
-    
-    # Decide whether it is spam or ham
-    if spam_votes > ham_votes:
-        return 'spam'
-    else:
-        return 'ham'
-    
+        # Considers k neighbors
+        # Compute distances between test_vector and all train_vectors
+        distances = []
+        for i, train_vec in enumerate(train_vectors):
+            sim = cosine_sim(test_vector, train_vec)
+            distances.append((sim, train_labels[i]))  
+        
+        # Sort by descending order of similarity, selects the top (k) neighbors
+        distances.sort(reverse=True, key=lambda x: x[0])
+        neighbors = distances[:k]
+        
+        # Majority vote
+        spam_votes = sum(1 for _, label in neighbors if label == 'spam')
+        ham_votes = k - spam_votes
+        
+        # Decide whether it is spam or ham
+        if spam_votes > ham_votes:
+            return 'spam'
+        else:
+            return 'ham'
+        
+    def test_knn(self, train_data: list, test_data: list, k=5) -> tuple:
+        '''
+        Tests a K-Nearest Neighbor classifier.
+        @params:
+            train_data (list): A list of training data where each element is a tuple containing the classification ('spam' or 'ham') and the message.
+            test_data (list): A list of test data where each element is a tuple containing the classification ('spam' or 'ham') and the message.
+        @returns::
+            tuple: A tuple containing four integers:
+                - tp (int): True positives (correctly classified as spam).
+                - tn (int): True negatives (correctly classified as ham).
+                - fp (int): False positives (incorrectly classified as spam).
+                - fn (int): False negatives (incorrectly classified as ham).
+        '''
+        tp = tn = fp = fn = 0
+        
+        # Get Vectors from Vecotrize and create the labels
+        train_vectors, test_vectors = utils.vectorize(train_data, test_data)
+        train_labels = np.array([doc[0] for doc in train_data])
+        test_labels = np.array([doc[0] for doc in test_data])
+        
+        # Converts to Numpy arrays to make faster
+        train_vectors = np.array(train_vectors)
+        test_vectors = np.array(test_vectors)
+        
+        # Classify each instance
+        for test_v, label in zip(test_vectors, test_labels):
+            prediction = self.knn(train_vectors, train_labels, test_v, k)
+            
+            if prediction == 'spam' and label == 'spam':
+                tp += 1
+            elif prediction == 'spam' and label == 'ham':
+                fp += 1
+            elif prediction == 'ham' and label == 'ham':
+                tn += 1
+            elif prediction == 'ham' and label == 'spam':
+                fn += 1
+
+        return tp, tn, fp, fn
+        
 def nb(corpus: list, sample: str, s: float) -> str:
     '''
     Naive Bayes classifier that determines if a given message is spam or ham.
