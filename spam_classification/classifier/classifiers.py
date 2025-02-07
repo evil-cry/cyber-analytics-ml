@@ -40,8 +40,7 @@ class _Classifier():
         '''
         Classify test messages as spam or ham.
         @param:
-            sample - sample object. Different for different classifiers.
-            label - actual sample class, either 'spam' or 'ham'.
+            sample - sample object. Uses different classes for different classifiers, check the correct one for your use case. 
         @returns:
             str: Prediction, either 'spam' or 'ham'
         ''' 
