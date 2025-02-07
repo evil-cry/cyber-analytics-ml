@@ -75,13 +75,13 @@ def determine_changing_key(data_points: list) -> str:
 def plot_tests() -> None:
     '''
     Reads test data from a file, parses it and generates graphs.
-    Data points must be located in 'classifier/values.txt'.
+    Data points must be located in 'spam_classification/docs/values.txt'.
     Distinct tests must be separated with two or more newlines.
     A data point must be in the format: method(stop_word_top_mille, {params}): f1%.
     Here, method is the method name, both parenthesis and the percentage sign are literal characters. stop_word_top_mille is an integer, params is a dictionary, and f1 is a float.
     Params is a dictionary of str:int, where str is the parameter name and int is the parameter value. 
     '''
-    filename = 'classifier/values.txt'
+    filename = 'spam_classification/docs/values.txt'
     with open(filename, 'r') as file:
         content = file.read()
     
@@ -143,7 +143,7 @@ def plot_tests() -> None:
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(f'graphs/{test_n}.png')
+        plt.savefig(f'spam_classification/graphs/{test_n}.png')
         plt.show()
 
 def _process_model(args: tuple) -> tuple:
@@ -217,11 +217,11 @@ def plot_learning_curve(method: callable, data: list, params: dict) -> None:
     plt.legend(loc='best')
     plt.grid(True)
     
-    plt.savefig(f'graphs/learning_curve_{method.__name__}.png')
+    plt.savefig(f'spam_classification/graphs/learning_curve_{method.__name__}.png')
     plt.show()
 
 if __name__ == "__main__":
-    data = "corpus/SMSSpamCollection"
+    data = "spam_classification/corpus/SMSSpamCollection"
 
     #plot_tests()
 
