@@ -203,7 +203,6 @@ class NB(_Classifier):
         p_sample_spam = np.log(spam_count / len(self.train_data))
         p_sample_ham = np.log(ham_count / len(self.train_data))
 
-        # Calculate the probability of the sample being spam or ham
         self.model = {
             'w_spam': w_spam,
             'w_ham': w_ham,
