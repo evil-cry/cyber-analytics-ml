@@ -1,20 +1,31 @@
 import numpy as np
+from sklearn import decomposition
 
 class _Algorithm():
 
     def __init__(self, corpus) -> None:
-        self.testing_normal_data = corpus[0]
-        self.testing_anomaly_data = corpus[1]
-        self.training_normal_data = corpus[2]
+        self.testing_normal_data = _Algorithm.load_corpus(corpus[0])
+        self.testing_anomaly_data = _Algorithm.load_corpus(corpus[1])
+        self.training_normal_data = _Algorithm.load_corpus(corpus[2])
 
-        self.testing_normal_data = np.load(self.training_normal_data)
-        self.testing_anomaly_data = np.load(self.testing_anomaly_data)
-        self.training_normal_data = np.load(self.training_normal_data)
+    @staticmethod
+    def load_corpus(path: str) -> np.array:
+        data = np.load(path)
+        data = _Algorithm.reduce(data)
 
-        print(f"Testing data shape: {self.testing_normal_data.shape}")
-        print(f"Anomaly data shape: {self.testing_anomaly_data.shape}")
-        print(f"Training data shape: {self.training_normal_data.shape}")
+        return data
 
+    @staticmethod
+    def reduce(data: np.array) -> np.array:
+        print(f"Original shape: {data.shape}")
+
+        pca = decomposition.PCA(n_components=2)
+
+        fit_data = pca.fit_transform(data)
+
+        print(f"Transformed shape: {fit_data.shape}")
+
+        return fit_data
 
     def train(self) -> None:
         raise NotImplementedError()
