@@ -40,8 +40,7 @@ class _Classifier():
         '''
         Classify test messages as spam or ham.
         @param:
-            sample - sample object. Different for different classifiers.
-            label - actual sample class, either 'spam' or 'ham'.
+            sample - sample object. Uses different classes for different classifiers, check the correct one for your use case. 
         @returns:
             str: Prediction, either 'spam' or 'ham'
         ''' 
@@ -204,7 +203,6 @@ class NB(_Classifier):
         p_sample_spam = np.log(spam_count / len(self.train_data))
         p_sample_ham = np.log(ham_count / len(self.train_data))
 
-        # Calculate the probability of the sample being spam or ham
         self.model = {
             'w_spam': w_spam,
             'w_ham': w_ham,

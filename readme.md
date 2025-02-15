@@ -3,7 +3,7 @@ This repository is a collection of various machine learning projects.
 
 ## Spam Detector Classification
 This project provides an easy way to implement and test spam detection using classifiers.
-Current iteration realizes Naive Bayes and K-Nearest Neighbor classifiers.
+Current iteration realizes Naive Bayes and K-Nearest Neighbors classifiers.
 The [report](spam_classification/docs/report.pdf) shows the full process of creating them, as well as various experimentation stages with classifier parameters.
 Final results are shown using neat graphs.
 
