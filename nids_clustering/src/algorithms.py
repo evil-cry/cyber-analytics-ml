@@ -8,15 +8,16 @@ import graphs
 class _Algorithm():
 
     def __init__(self, corpus) -> None:
+        print("Loading and reducing data")
         self.testing_normal_data = _Algorithm.load_corpus(corpus[0])
         self.testing_anomaly_data = _Algorithm.load_corpus(corpus[1])
-
         self.training_normal_data = _Algorithm.load_corpus(corpus[2])
-        self.training_normal_data = _Algorithm.reduce(self.training_normal_data)
 
     @staticmethod
     def load_corpus(path: str) -> np.array:
         data = np.load(path)
+
+        data = _Algorithm.reduce(data)
 
         return data
 
@@ -89,6 +90,20 @@ class K_means(_Algorithm):
 
         self.name = "K Means"
 
+    def train(self) -> None:
+        '''
+        Todo: Implement training method
+        '''
+
+        raise NotImplementedError()
+    
+    def evalute(self):
+        '''
+        Todo: Implement evaluation method
+        '''
+
+        raise NotImplementedError()
+
 
 class DBSCAN(_Algorithm):
 
@@ -96,7 +111,7 @@ class DBSCAN(_Algorithm):
         super(DBSCAN, self).__init__(*args, **kwargs)
 
         self.name = "Density-based spatial clustering of applications with noise"
-        self.e = 0.01 # Estimated from elbow plot
+        self.e = 0.0075 # Estimated from elbow plot
         self.min_samples = 4   
 
         if os.path.exists('nids_clustering/cache/distances.npy'):
@@ -110,6 +125,11 @@ class DBSCAN(_Algorithm):
 
         print(f"Clusters identified: {len(self.clusters)}")
 
+        print("--- Clustering normal data ---")
+        self.evaluate(self.testing_normal_data)
+
+        print("--- Clustering anomaly data ---")
+        self.evaluate(self.testing_anomaly_data)
 
     @staticmethod
     def estimate_eps(data: np.array) -> float:
@@ -119,10 +139,12 @@ class DBSCAN(_Algorithm):
 
         raise NotImplementedError()    
 
-    def train(self) -> list[int]:
+    def train(self) -> list[list[int]]:
         '''
         Classifies and clusters the core and non-core points of the training data set
         '''
+
+        print("--- Identifying core and non-core points ---")
 
         core_pts = set()
         non_core_pts = set()
@@ -139,6 +161,8 @@ class DBSCAN(_Algorithm):
 
         print(f"Core points: {len(core_pts)}")
         print(f"Non-core points: {len(non_core_pts)}")
+
+        print(" -- Clustering core points --")
 
         visited = set()
         clusters = []
@@ -171,3 +195,35 @@ class DBSCAN(_Algorithm):
                 clusters.append(cluster)
 
         return clusters
+    
+    def evaluate(self, data) -> list[list[int]]:
+        '''
+        Classify the testing data set
+        '''
+
+        n_samples = data.shape[0]
+        labels = np.full(n_samples, -1)
+
+        for test_i, test_p in enumerate(data):
+            for cluster_i, cluster in enumerate(self.clusters):
+                for core_i in cluster:
+                    core_p = self.training_normal_data[core_i]
+
+                    distance = np.linalg.norm(test_p - core_p)
+
+                    if distance <= self.e:
+                        labels[test_i] = cluster_i
+                        break
+
+                if labels[test_i] != -1:
+                    break
+                    
+        anomalies = []
+
+        for p in labels:
+            if p == -1:
+                anomalies.append(p)
+
+        print(f"Anomalies detected: {len(anomalies)}")
+
+        return labels
