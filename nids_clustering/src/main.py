@@ -7,8 +7,8 @@ def main():
         "nids_clustering\\corpus\\KDD99\\training_normal.npy"
     ]
 
-    # k_means = algorithms.K_means(data)
-    dbscan = algorithms.DBSCAN(data)
+    k_means = algorithms.K_means(data)
+    #dbscan = algorithms.DBSCAN(data)
 
 
 if __name__ == "__main__":

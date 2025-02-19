@@ -92,10 +92,10 @@ class K_means(_Algorithm):
         '''
         super(K_means, self).__init__(corpus)
         self.name = "K Means clustering"
-        self.max_iterations = 100   # max iterations
-        self.k = 3                  # number of clusters
-        self.threshold = .5         # distance threshold for anomaly detection
-        self.centroids = []         # k centroids
+        self.max_iterations = 100                                             # max iterations
+        self.k = 3                                                            # number of clusters
+        self.threshold = np.percentile(self.training_normal_data, 95)         # distance threshold for anomaly detection
+        self.centroids = []                                                   # k centroids
         
         self.train()
         self.evalute()
@@ -113,7 +113,10 @@ class K_means(_Algorithm):
         
         # Pick the lucky random centroids
         indices = random.sample(range(len(self.training_normal_data)), self.k)
-        self.centroids = np.array(self.training_normal_data[indices])
+        
+        #DEBUG REMOVE AFTER
+        #self.centroids = np.array(self.training_normal_data[indices])
+        self.centroids = self.training_normal_data[indices, :]
             
         for i in range(self.max_iterations):
             # Assign the clusters
