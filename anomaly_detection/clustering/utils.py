@@ -6,25 +6,33 @@ import re
 from sklearn import metrics
 import os
 
-def Distance():
-    def __init__(self, path = 'anomaly_detection/cache/distances.npy'):
+class Distance:
+    def __init__(self, load = True, path = 'anomaly_detection/cache/distances.npy'):
         self.path = path
+        self.distances = []
 
-        if os.path.exists(path):
+        if os.path.exists(path) and load:
             self.distances = np.load(path)
-        else:
-            self.distances = []
 
-    def calculate(self, data:np.array, type:string, save = False):
+    def __getitem__(self, index):
+        return self.distances[index]
+
+    def __iter__(self):
+        return iter(self.distances)
+    
+    def __bool__(self):
+        return bool(self.distances)
+
+    def calculate(self, data:np.array, type:string = "euclidean", save = False):
         call = metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS.get(type)
 
         if callable(call):
-            distances = call(data)
+            self.distances = call(data)
         else:
-            raise TypeError(f"{type} distance function does not exist. 
-                            \nMake sure to use sklearn.metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS dictionary items.")
+            raise TypeError(f"{type} distance function does not exist. \
+                            Make sure to use sklearn.metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS dictionary items.")
         if save:
-            np.save(self.path, distances)
+            np.save(self.path, self.distances)
 
     @staticmethod
     def list_functions():
