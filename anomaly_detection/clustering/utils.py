@@ -3,6 +3,32 @@ import pandas as pd
 from collections import Counter
 import string
 import re
+from sklearn import metrics
+import os
+
+def Distance():
+    def __init__(self, path = 'anomaly_detection/cache/distances.npy'):
+        self.path = path
+
+        if os.path.exists(path):
+            self.distances = np.load(path)
+        else:
+            self.distances = []
+
+    def calculate(self, data:np.array, type:string, save = False):
+        call = metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS.get(type)
+
+        if callable(call):
+            distances = call(data)
+        else:
+            raise TypeError(f"{type} distance function does not exist. 
+                            \nMake sure to use sklearn.metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS dictionary items.")
+        if save:
+            np.save(self.path, distances)
+
+    @staticmethod
+    def list_functions():
+        print(f'{metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS.keys()}')
 
 def vectorize(train_data: list, test_data: list) -> tuple:
     '''

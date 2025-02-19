@@ -1,84 +1,61 @@
 import os
 import numpy as np
 from sklearn import decomposition, metrics
+import utils
 
 class _Algorithm():
-    def __init__(self, corpus: list) -> None:
-        self.load_corpus(corpus)
+    def __init__(self, corpus: list, dimensions: int = 2) -> None:
+        self.corpus = corpus
+        self.dimensions = dimensions
+        self.load_corpus()
 
-    def load_corpus(self, corpus: list) -> None:
-        for i in range(len(corpus)):
-            corpus[i] = np.load(corpus[i])
-
-        pca = decomposition.PCA(n_components=2)
+    def load_corpus(self) -> None:
+        for i in range(len(self.corpus)):
+            self.corpus[i] = np.load(self.corpus[i])
 
         # Assume that the first element in the corpus is the training data.
+        self.training_normal = self.corpus[0]
+        self.testing_normal = self.corpus[1]
+        self.testing_attack = self.corpus[2]
+
+        pca = decomposition.PCA(n_components=self.dimensions)
+
         # Only fit the training data
-        self.training_normal = pca.fit_transform(corpus.pop(0))
-
-        self.testing_normal = pca.transform(corpus.pop(0))
-        self.testing_attack = pca.transform(corpus.pop(0))
-
-    @staticmethod
-    def e_distance(data: np.array) -> np.array:
-        '''
-        Calculate the euclidean distance between all points in the data set
-        '''
-
-        print("Calculating distances")
-
-        distances = metrics.pairwise.euclidean_distances(data)
-
-        np.save('anomaly_detection/cache/distances.npy', distances)
-
-        return distances
+        self.training_normal_reduced = pca.fit_transform(self.training_normal)
+        self.testing_normal_reduced = pca.transform(self.testing_normal)
+        self.testing_attack_reduced = pca.transform(self.testing_attack)
 
     def train(self) -> None:
-        '''
-        Todo: Implement training method
-        '''
-
         raise NotImplementedError()
 
 
     def test(self) -> None:
-        '''
-        Todo: Implement testing method
-        '''
-
         raise NotImplementedError()
 
-
     def evalute(self) -> None:
-        '''
-        Todo: Implement evaluation method
-        '''
-
         raise NotImplementedError()
 
 
 class K_means(_Algorithm):
-
     def __init__(self, corpus) -> None:
         super(K_means, self).__init__(corpus)
 
-        self.name = "K Means"
+        self.name = "K-Means"
 
 
 class DBSCAN(_Algorithm):
-
     def __init__(self, *args, **kwargs) -> None:
         super(DBSCAN, self).__init__(*args, **kwargs)
 
-        self.name = "Density-based spatial clustering of applications with noise"
+        self.name = "DBScan"
         self.e = 0.0075 # Estimated from elbow plot
         self.min_samples = 4   
 
-        if os.path.exists('anomaly_detecion/cache/distances.npy'):
-            self.e_distance_arr = np.load('anomaly_detecion/cache/distances.npy')
-
-        else:
-            self.e_distance_arr = _Algorithm.e_distance(self.training_normal)
+        if 'p' in kwargs:
+            p = kwargs.get('p')
+            self.distances = utils.Distance(p)
+            if not self.distances.distances:
+                self.distances.calculate(self.training_normal_reduced)
 
         # graphs.plot_eps(self.e_distance_arr, self.min_samples)
         self.clusters = self.train()
