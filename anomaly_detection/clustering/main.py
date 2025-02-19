@@ -1,5 +1,4 @@
-import anomaly_detection.clustering.algorithms as algorithms
-
+import algorithms
 
 def main():
     data = [
