@@ -92,7 +92,6 @@ class K_means(_Algorithm):
         '''
         super(K_means, self).__init__(corpus)
         self.name = "K Means clustering"
-        self.max_iterations = 100                                             # max iterations
         self.k = 3                                                            # number of clusters
         self.threshold = np.percentile(self.training_normal_data, 95)         # distance threshold for anomaly detection
         self.centroids = []                                                   # k centroids
@@ -113,40 +112,48 @@ class K_means(_Algorithm):
         
         # Pick the lucky random centroids
         indices = random.sample(range(len(self.training_normal_data)), self.k)
-        
-        #DEBUG REMOVE AFTER
-        #self.centroids = np.array(self.training_normal_data[indices])
         self.centroids = self.training_normal_data[indices, :]
+        
+        tolerance = 1e-4
+        converged = False
+        max_iterations = 100
+        iterations = 0
             
-        for i in range(self.max_iterations):
+        while not converged and iterations < max_iterations:
+            #print(iterations)
+            iterations += 1
             # Assign the clusters
             cluster_assignments = []
             for data_point in self.training_normal_data:
                 distances = []
-                for centroid in self.centroids:
-                    # Compute the Euclidean Distance Between The Two Points
-                    distances.append(np.sqrt(np.sum((data_point - centroid) ** 2)))
+                #compute euclidean distance with numpy 
+                distances = np.linalg.norm(self.centroids - data_point, axis=1)
                 closest = np.argmin(distances) # find closest centroid
                 cluster_assignments.append(closest)
+                
+            cluster_assignments = np.array(cluster_assignments)
             
             # Computer new clusterpoints
-            new_centroids = []
+            new_centroids = np.zeros_like(self.centroids)
+
             for cluster in range(self.k):
-                cluster_points = []
-                for i in range(len(self.training_normal_data)):
-                    if cluster_assignments[i] == cluster:
-                        cluster_points.append(self.training_normal_data[i])
+                cluster_points = self.training_normal_data[cluster_assignments == cluster]
+                
                 if len(cluster_points) > 0:
                     # stop div 0 error 
                     new = np.mean(cluster_points, axis=0)
                 else:
-                    new = random.choice(self.training_normal_data)
-                new_centroids.append(new)
+                    # Assign farthest point NOT random point
+                    all_distances = np.linalg.norm(self.training_normal_data[:, None] - self.centroids, axis=2)
+                    distances_to_centroids = np.min(all_distances, axis=1)
+                    new = self.training_normal_data[np.argmax(distances_to_centroids)]
+
+            new_centroids[cluster] = new  # Append new
             
             # Check if converged
-            if np.allclose(np.array(self.centroids), np.array(new_centroids)):
-                print(f"Successfully Converged in {i + 1} Iterations")
-                break
+            if np.allclose(self.centroids, new_centroids, atol=tolerance):
+                print(f"Successfully Converged in {iterations} Iterations")
+                converged = True
             
             self.centroids = new_centroids
         
