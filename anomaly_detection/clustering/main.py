@@ -1,4 +1,5 @@
-import clustering
+import anomaly_detection.clustering.algorithms as algorithms
+
 
 def main():
     data = [
@@ -7,8 +8,8 @@ def main():
         "anomaly_detection/corpus/KDD99/testing_attack.npy", 
     ]
 
-    # k_means = algorithms.K_means(data)
-    dbscan = clustering.DBSCAN(data)
+    k_means = algorithms.K_Means(data)
+    dbscan = algorithms.DBSCAN(data)
 
 
 if __name__ == "__main__":
