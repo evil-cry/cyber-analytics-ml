@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import random
 from sklearn import decomposition
 from functools import lru_cache
 
@@ -86,16 +87,64 @@ class _Algorithm():
 class K_means(_Algorithm):
 
     def __init__(self, corpus) -> None:
+        '''
+        Initialization for k-means clustering
+        '''
         super(K_means, self).__init__(corpus)
-
-        self.name = "K Means"
-
+        self.name = "K Means clustering"
+        self.max_iterations = 100   # max iterations
+        self.k = 3                  # number of clusters
+        self.threshold = .5         # distance threshold for anomaly detection
+        self.centroids = []         # k centroids
+        
     def train(self) -> None:
         '''
-        Todo: Implement training method
+        Trains the model
+        
+        1. Initalizes k centroids at random
+        2. Assigns data points to each cluster (nearest centroid)
+        3. Loops through computing new centroids for max iterations
         '''
-
-        raise NotImplementedError()
+        print("Training K-means...")
+        
+        # Pick the lucky random centroids
+        indices = random.sample(range(len(self.training_normal_data)), self.k)
+        for i in indices:
+            self.centroids = [self.training_normal_data[i]]
+            
+        for i in range(self.max_iterations):
+            # Assign the clusters
+            cluster_assignments = []
+            for data_point in self.training_normal_data:
+                distances = []
+                for centroid in self.centroids:
+                    # Compute the Euclidean Distance Between The Two Points
+                    distances.append(np.sqrt(np.sum((data_point - centroid) ** 2)))
+                closest = np.argmin(distances) # find closest centroid
+                cluster_assignments.append(closest)
+            
+            # Computer new clusterpoints
+            new_centroids = []
+            for cluster in range(self.k):
+                cluster_points = []
+                for i in range(len(self.training_normal_data)):
+                    if cluster_assignments[i] == cluster:
+                        cluster_points.append(self.training_normal_data[i])
+                if len(cluster_points) > 0:
+                    # stop div 0 error 
+                    new = np.mean(cluster_points, axis=0)
+                else:
+                    new = random.choice(self.training_normal_data)
+                new_centroids.append(new)
+            
+            # Check if converged
+            if np.allclose(self.centroids, new_centroids):
+                print(f"Successfully Converged in {i + 1} Iterations")
+                break
+            
+            self.centroids = new_centroids
+        
+        print("K-means training complete.")
     
     def evalute(self):
         '''
