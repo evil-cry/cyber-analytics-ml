@@ -97,10 +97,14 @@ class K_means(_Algorithm):
         self.threshold = .5         # distance threshold for anomaly detection
         self.centroids = []         # k centroids
         
+        self.train()
+        self.evalute()
+        
     def train(self) -> None:
         '''
         Trains the model
         
+        Steps:
         1. Initalizes k centroids at random
         2. Assigns data points to each cluster (nearest centroid)
         3. Loops through computing new centroids for max iterations
@@ -109,8 +113,7 @@ class K_means(_Algorithm):
         
         # Pick the lucky random centroids
         indices = random.sample(range(len(self.training_normal_data)), self.k)
-        for i in indices:
-            self.centroids = [self.training_normal_data[i]]
+        self.centroids = np.array(self.training_normal_data[indices])
             
         for i in range(self.max_iterations):
             # Assign the clusters
@@ -138,20 +141,37 @@ class K_means(_Algorithm):
                 new_centroids.append(new)
             
             # Check if converged
-            if np.allclose(self.centroids, new_centroids):
+            if np.allclose(np.array(self.centroids), np.array(new_centroids)):
                 print(f"Successfully Converged in {i + 1} Iterations")
                 break
             
             self.centroids = new_centroids
         
-        print("K-means training complete.")
+        print("K-means training complete!")
     
     def evalute(self):
         '''
-        Todo: Implement evaluation method
+        Evaultes the K-Means Model
+        
+        Steps:
+        1. Iterate through each test sample
+        2. Compute distance to the nearest centroid
+        3. Check distance threshold and see if anomaly
+        4. Count anomalies 
+        5. Print total anomalies
         '''
-
-        raise NotImplementedError()
+        anomalies = 0
+        
+        for sample in self.testing_anomaly_data:
+            # Compute Euclidean distance
+            distances = np.linalg.norm(self.centroids - sample, axis=1)
+            
+            min_distance = np.min(distances)
+            
+            if min_distance > self.threshold:
+                anomalies += 1
+                
+        print(f"Total anomalies detected: {anomalies}")
 
 
 class DBSCAN(_Algorithm):
