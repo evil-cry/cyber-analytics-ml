@@ -167,21 +167,39 @@ class K_means(_Algorithm):
         1. Iterate through each test sample
         2. Compute distance to the nearest centroid
         3. Check distance threshold and see if anomaly
-        4. Count anomalies 
-        5. Print total anomalies
+        4. Count metrics 
+        5. Print total metrics
         '''
-        anomalies = 0
+        TP = 0
+        TN = 0
+        FP = 0
+        FN = 0
         
         for sample in self.testing_anomaly_data:
-            # Compute Euclidean distance
             distances = np.linalg.norm(self.centroids - sample, axis=1)
-            
             min_distance = np.min(distances)
-            
             if min_distance > self.threshold:
-                anomalies += 1
-                
-        print(f"Total anomalies detected: {anomalies}")
+                TP += 1  
+            else:
+                FN += 1  
+
+        for sample in self.testing_normal_data:
+            distances = np.linalg.norm(self.centroids - sample, axis=1)
+            min_distance = np.min(distances)
+            if min_distance > self.threshold:
+                FP += 1  
+            else:
+                TN += 1 
+        
+        accuracy = (TP + TN) / (TP + FP + TN + FN)
+        TPrate = TP / (TP + FN) if (TP + FN) > 0 else 0
+        FPrate = FP / (TN + FP) if (TN + FP) > 0 else 0
+        f1_score = (2 * TP) / (2 * TP + FP + FN) if (2 * TP + FP + FN) > 0 else 0
+
+        print(f"Accuracy: {accuracy:.4f}")
+        print(f"True Positive Rate (TPR): {TPrate:.4f}")
+        print(f"False Positive Rate (FPR): {FPrate:.4f}")
+        print(f"F1 Score: {f1_score:.4f}")
 
 
 class DBSCAN(_Algorithm):
@@ -209,14 +227,6 @@ class DBSCAN(_Algorithm):
 
         print("--- Clustering anomaly data ---")
         self.evaluate(self.testing_anomaly_data)
-
-    @staticmethod
-    def estimate_eps(data: np.array) -> float:
-        '''
-        Estimate the optimal value of epsilon for DBSCAN
-        '''
-
-        raise NotImplementedError()    
 
     def train(self) -> list[list[int]]:
         '''
@@ -279,7 +289,11 @@ class DBSCAN(_Algorithm):
         '''
         Classify the testing data set
         '''
-
+        TP = 0
+        TN = 0
+        FP = 0
+        FN = 0
+        
         n_samples = data.shape[0]
         labels = np.full(n_samples, -1)
 
@@ -296,13 +310,27 @@ class DBSCAN(_Algorithm):
 
                 if labels[test_i] != -1:
                     break
-                    
-        anomalies = []
+        
+        for i, label in enumerate(labels):
+            if i < len(self.testing_anomaly_data):
+                if label == -1:
+                    TP += 1  
+                else:
+                    FN += 1  
+            else:
+                if label == -1:
+                    FP += 1 
+                else:
+                    TN += 1          
 
-        for p in labels:
-            if p == -1:
-                anomalies.append(p)
+        accuracy = (TP + TN) / (TP + FP + TN + FN)
+        TPrate = TP / (TP + FN) if (TP + FN) > 0 else 0
+        FPrate = FP / (TN + FP) if (TN + FP) > 0 else 0
+        f1_score = (2 * TP) / (2 * TP + FP + FN) if (2 * TP + FP + FN) > 0 else 0
 
-        print(f"Anomalies detected: {len(anomalies)}")
+        print(f"Accuracy: {accuracy:.4f}")
+        print(f"True Positive Rate (TPR): {TPrate:.4f}")
+        print(f"False Positive Rate (FPR): {FPrate:.4f}")
+        print(f"F1 Score: {f1_score:.4f}")
 
         return labels
