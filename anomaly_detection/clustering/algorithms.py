@@ -13,14 +13,15 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-logger.disable()
+logging.disable(50)
 
 class _Algorithm():
-    def __init__(self, corpus: list, dimensions: int = 2) -> None:
+    def __init__(self, corpus: list, dimensions: int = 2, parameters = {}) -> None:
         self.corpus = deepcopy(corpus) 
         self.dimensions = dimensions
-        self.load_corpus()
+        self.parameters = parameters
 
+        self.load_corpus()
         self.plot = make_graph.Plot()
 
         self.normal_count = len(self.testing_normal_reduced)
@@ -104,11 +105,11 @@ class K_Means(_Algorithm):
         super(K_Means, self).__init__(*args, **kwargs)
 
         self.name = "K-Means"
-        self.k = kwargs.get('k') or 3
-        self.tolerance = kwargs.get('tolerance') or 1e-4
-        self.max_iterations = kwargs.get('max') or 100
+        self.k = self.parameters.get('k') or 3
+        self.tolerance = self.parameters.get('tolerance') or 1e-4
+        self.max_iterations = self.parameters.get('max') or 100
 
-        threshold = kwargs.get('threshold') or 95
+        threshold = self.parameters.get('threshold') or 95
         self.threshold = np.percentile(self.training_normal_reduced, threshold)
 
         self.plot.configure('X', 'Y', title=f"{self.name}:{kwargs}")

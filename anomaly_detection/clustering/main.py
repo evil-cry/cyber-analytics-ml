@@ -7,7 +7,7 @@ def main():
         "anomaly_detection/corpus/KDD99/testing_attack.npy", 
     ]
 
-    k_means = algorithms.K_Means(data)
+    k_means = algorithms.K_Means(data, 3, {'k':2})
     #dbscan = algorithms.DBSCAN(data)
 
     k_means.draw(True)
