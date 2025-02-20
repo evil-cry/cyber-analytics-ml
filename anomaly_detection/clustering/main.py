@@ -10,8 +10,8 @@ def main():
     k_means = algorithms.K_Means(data, 16, 2, {'k':2})
     dbscan = algorithms.DBSCAN(data, 16, 2, {'min':20})
 
-    k_means.draw(True)
-    dbscan.draw(True)
+    k_means.draw('anomaly_detection/graphs/kmeans.png')
+    dbscan.draw('anomaly_detection/graphs/dbscan.png')
 
 if __name__ == "__main__":
     main()

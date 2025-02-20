@@ -82,6 +82,7 @@ class _Algorithm():
         self.calculate_metrics(TP, FP, TN, FN)
 
         print(self.name)
+        print(f"Clustering results: TP={TP}, FP={FP}, TN={TN}, FN={FN}")
         print(f"Accuracy: {self.metrics['accuracy']:.2f}%")
         print(f"True Positive Rate: {self.metrics['tpr']:.2f}%")
         print(f"False Positive Rate: {self.metrics['fpr']:.2f}%")
@@ -94,8 +95,8 @@ class _Algorithm():
     def calculate_rates(self):
         raise NotImplementedError
     
-    def draw(self, show = False):
-        self.plot.draw(show)
+    def draw(self, path):
+        self.plot.draw(path)
 
 class K_Means(_Algorithm):
     '''
@@ -246,7 +247,7 @@ class DBSCAN(_Algorithm):
 
         self.name = "DBScan"
         self.e = self.parameters.get('e') or 0.0075 # Estimated from elbow plot
-        self.min_samples = self.parameters.get('min') or 4   
+        self.min_samples = self.parameters.get('min') or 20  
 
         if 'p' in self.parameters:
             p = self.parameters.get('p')

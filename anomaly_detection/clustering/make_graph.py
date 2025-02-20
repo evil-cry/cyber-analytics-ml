@@ -3,7 +3,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from random import randint
 
-interactive = plt.get_backend()
 matplotlib.use('Agg')
 
 class Plot:
@@ -12,13 +11,12 @@ class Plot:
         self.title = ''
         self.xlabel = ''
         self.ylabel = ''
-        self.size = 8
+        self.size = 1
         self.colors = {'tp':"#FF0000", 'tn':"#00FF00", 'fp':"#0000FF", 'fn':'#000000'}
         self.labels = {'tp': "True Positive", 'tn': "True Negative", 'fp': "False Positive", 'fn':"False Negative"}
-        self.path = ''
         self.dimensions = dimensions
 
-    def configure(self, xlabel, ylabel, title = '', size = 8, colors = None, labels = None, path = None):
+    def configure(self, xlabel, ylabel, title = '', size = 1, colors = None, labels = None):
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title
@@ -27,8 +25,6 @@ class Plot:
             self.colors = colors
         if labels:
             self.labels = labels
-        if path:
-            self.path = path
 
     def __iadd__(self, other):
         if isinstance(other, tuple) and len(other) == 2:
@@ -40,14 +36,18 @@ class Plot:
         else:
             raise ValueError("Can only add tuple(coordinate, tag) to Plot.")
 
-    def draw(self, show):
+    def draw(self, path):
+        plt.xlabel(self.xlabel)
+        plt.ylabel(self.ylabel)
+        plt.title(self.title)
+
         for tag, coordinates in self.graph_points.items():
             x, y = zip(*coordinates)
 
             if tag in self.colors:
                 tag_color = self.colors[tag]
             else:
-                tag_color = randint(0, 0xFFFFFF) # Generating a fully random color isn't the best idea for graphs on white background but this is a fallback anyway
+                tag_color = randint(0, 0xFFFFFF+1) # Generating a fully random color isn't the best idea for graphs on white background but this is a fallback anyway
                 tag_color = f'#{tag_color:x}'
 
             if tag in self.labels:
@@ -55,20 +55,9 @@ class Plot:
             else:
                 tag_label = f'Mystery'
 
-            if show:
-                matplotlib.use(interactive)
+            plt.scatter(x=x, y=y, c=tag_color, label=tag_label, s=self.size, alpha=0.5, zorder=2)
 
-            plt.scatter(x=x, y=y, c=tag_color, label=tag_label, s=self.size)
-            plt.xlabel = self.xlabel
-            plt.ylabel = self.ylabel
-            plt.title(self.title)
-
-        if show:
-            plt.legend()
-            plt.show()
-        if self.path:
-            plt.savefig(self.path)
-        matplotlib.use('Agg')
+        plt.savefig(path, dpi=1200)
 
 def plot_eps(data: np.array, min_pts: int) -> None:
     '''
