@@ -85,13 +85,13 @@ class K_Means(_Algorithm):
     def __init__(self, *args, **kwargs) -> None:
         super(K_Means, self).__init__(*args, **kwargs)
 
-        self.name = "K-Means"
-        self.k = 3
-        self.tolerance = 1e-4
-        self.max_iterations = 100
-        self.threshold = np.percentile(self.training_normal_reduced, 95)
-        self.centroids = self.cluster()
-        self.evaluate()
+        self.name = "K-Means"                                               # Algorithm name
+        self.k = 3                                                          # Number of clusters (k)
+        self.tolerance = 1e-4                                               # Tolerance for centroid convergence
+        self.max_iterations = 100                                           # Maximum iterations for the clustering process
+        self.threshold = np.percentile(self.training_normal_reduced, 95)    # Threshold for anomaly detection (95th percentile of normal data)
+        self.centroids = self.cluster()                                     # Train the model by identifying cluster centroids
+        self.evaluate()                                                     # Evaluate model performance
 
 
     def cluster(self) -> np.array:
@@ -103,61 +103,87 @@ class K_Means(_Algorithm):
         2. Assigns data points to each cluster (nearest centroid)
         3. Loops through computing new centroids for max iterations
         '''
-
         logger.debug("--- Identifying Centroids ---")
 
+        # Select k random indices to initialize centroids
         indices = np.random.choice(self.training_normal_reduced.shape[0], self.k, replace=False)
 
-        # Initialize centroids
+        # Initialize centroids with selected data points
         centroids = self.training_normal_reduced[indices, :]
         iterations = 0
 
+        # Run through X iterations to optimize the centroids
         for _ in range(self.max_iterations):
             iterations += 1 
             
+            # Compute the Euclidean distance between each data point and centroids
             distances = cdist(self.training_normal_reduced, centroids, metric='euclidean')
+            
+            # Assign each point to the nearest centroid
             assignments = np.argmin(distances, axis=1)
 
+            # Placeholder for updated centroids
             new_centroids = np.zeros_like(centroids)
 
             for cluster in range(self.k):
+                # Extract points belonging to the current cluster
                 cluster_points = self.training_normal_reduced[assignments == cluster]
                 
                 if len(cluster_points) > 0:
+                    # Compute new centroid as the mean of assigned points
                     new_centroids[cluster] = np.mean(cluster_points, axis=0)
 
                 else:
+                    # Handle empty cluster: reassign centroid to farthest point
                     distances = cdist(self.training_normal_reduced, centroids, metric='euclidean')
                     distances_c = np.min(distances, axis=1)
                     new_centroids[cluster] = self.training_normal_reduced[np.argmax(distances_c)]
 
+            # Check for convergence (if centroids do not change significantly)
             if np.all(np.abs(centroids - new_centroids) < self.tolerance):
                 logger.debug(f"Converged after {iterations} iterations")
                 break
 
+            # Update centroids for next iteration
             centroids = new_centroids
 
+        # Log if max iterations are reached without convergence
         if iterations == self.max_iterations:
             logger.debug(f"Reached maximum iterations: {iterations} without convergance")
 
         return centroids
     
     def calculate_rates(self):
+        '''
+        Calculates the classification rates: 
+        - True Positives (TP): Correctly identified anomalies
+        - True Negatives (TN): Correctly identified normal data
+        - False Positives (FP): Normal data misclassified as anomalies
+        - False Negatives (FN): Anomalies misclassified as normal
+        '''
         TP = TN = FP = FN = 0
 
+        # Evaluate normal testing samples
         for sample in self.testing_normal_reduced:
+            # Compute distances from centroids
             distances = np.linalg.norm(sample - self.centroids, axis=1)
+            
+            # Determine the closest centroid
             nearest = np.min(distances)
 
+            # Classify based on threshold (above threshold = anomaly)
             if nearest > self.threshold:
                 FP += 1
             else:
                 TN += 1
 
+        # Evaluate attack testing samples
         for sample in self.testing_attack_reduced:
+            # Compute distances from centroids
             distances = np.linalg.norm(sample - self.centroids, axis=1)
             nearest = np.min(distances)
 
+            # Classify based on threshold (above threshold = anomaly)
             if nearest > self.threshold:
                 TP += 1
             else:
