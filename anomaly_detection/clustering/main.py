@@ -40,8 +40,8 @@ def find_best(data):
         '''
         
         # e = 75 / 10000
-        for e in range(1, 200, 10):
-            for min in range(40, 100, 10):
+        for e in range(70, 111, 1):
+            for min in range(2, 3, 1):
                 evaluate_instance('dbscan', 16, {'e': e / 10000, 'min': min}, data)
 
     dbscan_search()
@@ -56,7 +56,7 @@ def main():
     find_best(data)
 
     #k_means = algorithms.K_Means(data, 16, 2, {'k':2})
-    #dbscan = algorithms.DBSCAN(data, 16, 2, {'min':20})
+    #dbscan = algorithms.DBSCAN(data, 16, 2, {'e':0.009, 'min':2})
 
     #k_means.draw('anomaly_detection/graphs/kmeans.png')
     #dbscan.draw('anomaly_detection/graphs/dbscan.png')
