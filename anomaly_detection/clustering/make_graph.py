@@ -7,7 +7,7 @@ interactive = plt.get_backend()
 matplotlib.use('Agg')
 
 class Plot:
-    def __init__(self):
+    def __init__(self, dimensions):
         self.graph_points = {}
         self.title = ''
         self.xlabel = ''
@@ -15,6 +15,7 @@ class Plot:
         self.colors = {-1:"#FF0000", 0:"#00FF00"}
         self.labels = {-1: "Anomaly", 0: "Normal"}
         self.path = ''
+        self.dimensions = dimensions
 
     def configure(self, xlabel, ylabel, title = '', colors = None, labels = None, path = None):
         self.xlabel = xlabel

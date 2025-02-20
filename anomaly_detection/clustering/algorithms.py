@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 logging.disable(50)
 
 class _Algorithm():
-    def __init__(self, corpus: list, dimensions: int = 2, parameters = {}) -> None:
+    def __init__(self, corpus: list, dimensions: int = 2, plot_dimensions:int = 2, parameters = {}) -> None:
         self.corpus = deepcopy(corpus) 
         self.dimensions = dimensions
         self.parameters = parameters
 
         self.load_corpus()
-        self.plot = make_graph.Plot()
+        self.plot = make_graph.Plot(plot_dimensions)
 
         self.normal_count = len(self.testing_normal_reduced)
         self.attack_count = len(self.testing_attack_reduced)
@@ -39,9 +39,13 @@ class _Algorithm():
         pca = decomposition.PCA(n_components=self.dimensions)
 
         # Only fit the training data
-        self.training_normal_reduced = pca.fit_transform(self.training_normal)
-        self.testing_normal_reduced = pca.transform(self.testing_normal)
-        self.testing_attack_reduced = pca.transform(self.testing_attack)
+        self.training_normal_reduced = pca.fit(self.training_normal)
+        self.pca = pca
+
+        if self.dimensions:
+            self.training_normal_reduced = pca.transform(self.training_normal)
+            self.testing_normal_reduced = pca.transform(self.testing_normal)
+            self.testing_attack_reduced = pca.transform(self.testing_attack)
 
     def calculate_metrics(self, TP: int, FP: int, TN: int, FN: int) -> dict:
         '''
@@ -91,7 +95,7 @@ class _Algorithm():
 class K_Means(_Algorithm):
     '''
     K-Means Clustering Algorithm
-    Optional kwargs parameters:
+    Optional parameters:
         k: int, default = 3
            Number of clusters (k)
         tolerance: float, default = 1e-4
@@ -112,7 +116,8 @@ class K_Means(_Algorithm):
         threshold = self.parameters.get('threshold') or 95
         self.threshold = np.percentile(self.training_normal_reduced, threshold)
 
-        self.plot.configure('X', 'Y', title=f"{self.name}:{kwargs}")
+        self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
+
         self.centroids = self.cluster()
         self.evaluate()
 
@@ -226,15 +231,15 @@ class DBSCAN(_Algorithm):
         self.e = 0.0075 # Estimated from elbow plot
         self.min_samples = 4   
 
-        if 'p' in kwargs:
-            p = kwargs.get('p')
+        if 'p' in self.parameters:
+            p = self.parameters.get('p')
             self.distances = utils.Distance(p)
         else:
             self.distances = utils.Distance(False)
 
         if not self.distances:
             # Only pass distance if it is given
-            self.distances.calculate(self.training_normal_reduced, **({'d': kwargs['d']} if 'd' in kwargs else {}))
+            self.distances.calculate(self.training_normal_reduced, **({'d': self.parameters['d']} if 'd' in self.parameters else {}))
 
         # graphs.plot_eps(self.e_distance_arr, self.min_samples)
         self.clusters = self.cluster()
