@@ -113,16 +113,14 @@ class K_Means(_Algorithm):
     '''
     def __init__(self, *args, **kwargs) -> None:
         super(K_Means, self).__init__(*args, **kwargs)
-
         self.name = "K-Means"
+        self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
         self.k = self.parameters.get('k') or 2
         self.tolerance = self.parameters.get('tolerance') or 1e-4
         self.max_iterations = self.parameters.get('max') or 100
 
         threshold = self.parameters.get('threshold') or 95
         self.threshold = np.percentile(self.training_normal_reduced, threshold)
-
-        self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
 
         self.centroids = self.cluster()
         self.evaluate()
@@ -246,6 +244,7 @@ class DBSCAN(_Algorithm):
         super(DBSCAN, self).__init__(*args, **kwargs)
 
         self.name = "DBScan"
+        self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
         self.e = self.parameters.get('e') or 0.0075 # Estimated from elbow plot
         self.min_samples = self.parameters.get('min') or 20  
 

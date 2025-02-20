@@ -55,7 +55,7 @@ class Plot:
             else:
                 tag_label = f'Mystery'
 
-            plt.scatter(x=x, y=y, c=tag_color, label=tag_label, s=self.size, alpha=0.5, zorder=2)
+            plt.scatter(x=x, y=y, c=tag_color, label=tag_label, s=self.size, alpha=0.2)
 
         plt.savefig(path, dpi=1200)
 
