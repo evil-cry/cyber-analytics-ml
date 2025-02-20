@@ -1,10 +1,16 @@
-import os
+# AI Usage Statement
+# Tools Used: o1, o3-mini, o1-mini, gpt-4o (no one could answer my question)
+# - Usage: Transforming data into 2 dimensions before plotting
+# - Verification: Comparing the plots before and after the change
+# Prohibited Use Compliance: Confirmed
+
 import numpy as np
 import logging
 from sklearn import decomposition, metrics
 from scipy.spatial.distance import cdist
 import utils
 from copy import deepcopy
+import make_graph
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -12,16 +18,16 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-logger.propagate = False
+logging.disable(50)
 
 class _Algorithm():
-    def __init__(self, corpus: list, dimensions: int = 2) -> None:
+    def __init__(self, corpus: list, dimensions: int = 2, plot_dimensions:int = 2, parameters = {}) -> None:
         self.corpus = deepcopy(corpus) 
         self.dimensions = dimensions
-        self.load_corpus()
+        self.parameters = parameters
 
-        self.normal_count = len(self.testing_normal_reduced)
-        self.attack_count = len(self.testing_attack_reduced)
+        self.plot = make_graph.Plot(plot_dimensions)
+        self.load_corpus()
 
     def load_corpus(self) -> None:
         for i in range(len(self.corpus)):
@@ -33,42 +39,49 @@ class _Algorithm():
         self.testing_attack = self.corpus[2]
 
         pca = decomposition.PCA(n_components=self.dimensions)
+        plot_pca = decomposition.PCA(n_components=self.plot.dimensions)
 
         # Only fit the training data
-        self.training_normal_reduced = pca.fit_transform(self.training_normal)
+        pca.fit(self.training_normal)
+        self.pca = pca
+
+        self.training_normal_reduced = pca.transform(self.training_normal)
         self.testing_normal_reduced = pca.transform(self.testing_normal)
         self.testing_attack_reduced = pca.transform(self.testing_attack)
+            
+        plot_pca.fit(self.training_normal_reduced)
+        self.plot_pca = plot_pca
 
-    def calculate_metrics(self, TP: int, FP: int, TN: int, FN: int) -> dict:
+    def calculate_metrics(self) -> dict:
         '''
         Calculate metrics based on TP, FP, TN, FN
         '''
-
+        TP, TN, FP, FN = self.TP, self.TN, self.FP, self.FN
         try:
-            accuracy = (TP + TN) / (TP + FP + TN + FN)
-            tpr = TP / (TP + FN)
-            fpr = FP / (TN + FP)
-            f1 = (2 * TP) / ((2 * TP) + FP + FN)
+            self.accuracy = (TP + TN) / (TP + FP + TN + FN)
+            self.tpr = TP / (TP + FN)
+            self.fpr = FP / (TN + FP)
+            self.f1 = (2 * TP) / ((2 * TP) + FP + FN)
 
         except ZeroDivisionError:
-            accuracy = 0
-            tpr = 0
-            fpr = 0
-            f1 = 0
+            self.accuracy = 0
+            self.tpr = 0
+            self.fpr = 0
+            self.f1 = 0
 
         self.metrics = {
-            'accuracy': accuracy * 100,
-            'tpr': tpr * 100,
-            'fpr': fpr * 100,
-            'f1': f1 * 100
+            'accuracy': self.accuracy * 100,
+            'tpr': self.tpr * 100,
+            'fpr': self.fpr * 100,
+            'f1': self.f1 * 100
         }
 
     def evaluate(self):
-        TP, TN, FP, FN = self.calculate_rates()
-
-        self.calculate_metrics(TP, FP, TN, FN)
+        self.calculate_rates()
+        self.calculate_metrics()
 
         print(self.name)
+        print(f"Clustering results: TP={self.TP}, FP={self.FP}, TN={self.TN}, FN={self.FN}")
         print(f"Accuracy: {self.metrics['accuracy']:.2f}%")
         print(f"True Positive Rate: {self.metrics['tpr']:.2f}%")
         print(f"False Positive Rate: {self.metrics['fpr']:.2f}%")
@@ -80,18 +93,40 @@ class _Algorithm():
     
     def calculate_rates(self):
         raise NotImplementedError
+    
+    def draw(self, path):
+        self.plot.draw(path)
+
+    def print_score(self, score):
+        params_str = ",".join(f"{k}={v}" for k, v in self.parameters.items())
+        return f'{self.name}:{params_str}:{score}\n'
 
 class K_Means(_Algorithm):
+    '''
+    K-Means Clustering Algorithm
+    Optional parameters:
+        k: int, default = 3
+           Number of clusters (k)
+        tolerance: float, default = 1e-4
+            Tolerance for centroid convergence
+        max: int, default = 100
+           Maximum iterations for the clustering process
+        threshold: float, default = 95
+            Threshold for anomaly detection (95th percentile of normal data)
+    '''
     def __init__(self, *args, **kwargs) -> None:
         super(K_Means, self).__init__(*args, **kwargs)
+        self.name = "K-Means"
+        self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
+        self.k = self.parameters.get('k') or 2
+        self.tolerance = self.parameters.get('tolerance') or 1e-4
+        self.max_iterations = self.parameters.get('max') or 100
 
-        self.name = "K-Means"                                               # Algorithm name
-        self.k = 3                                                          # Number of clusters (k)
-        self.tolerance = 1e-4                                               # Tolerance for centroid convergence
-        self.max_iterations = 100                                           # Maximum iterations for the clustering process
-        self.threshold = np.percentile(self.training_normal_reduced, 95)    # Threshold for anomaly detection (95th percentile of normal data)
-        self.centroids = self.cluster()                                     # Train the model by identifying cluster centroids
-        self.evaluate()                                                     # Evaluate model performance
+        threshold = self.parameters.get('threshold') or 95
+        self.threshold = np.percentile(self.training_normal_reduced, threshold)
+
+        self.centroids = self.cluster()
+        self.evaluate()
 
 
     def cluster(self) -> np.array:
@@ -161,10 +196,22 @@ class K_Means(_Algorithm):
         - False Positives (FP): Normal data misclassified as anomalies
         - False Negatives (FN): Anomalies misclassified as normal
         '''
-        TP = TN = FP = FN = 0
+        self.TP = self.TN = self.FP = self.FN = 0
 
         # Evaluate normal testing samples
         for sample in self.testing_normal_reduced:
+
+
+            '''
+            This single line of code made me go into an hour-long research on how to get the data into two dimension before plotting.
+            At first, I didn't think of simply transforming a single sample. I couldn't find anything on the internet regarding this - our use case seems pretty rare.
+            I don't use AIs for coding this, only for general questions regarding algorithms.
+            Not a single model I tried answered my question in a helpful way. 
+            Finally, through experimentation and lots of wasted openai tokens (a whopping 50 cents worth of them), this line was made. 
+            '''
+            sample_2d = self.plot_pca.transform(sample.reshape(1, -1))[0]
+
+
             # Compute distances from centroids
             distances = np.linalg.norm(sample - self.centroids, axis=1)
             
@@ -173,9 +220,11 @@ class K_Means(_Algorithm):
 
             # Classify based on threshold (above threshold = anomaly)
             if nearest > self.threshold:
-                FP += 1
+                self.FP += 1
+                self.plot += (sample_2d, 'fp')
             else:
-                TN += 1
+                self.TN += 1
+                self.plot += (sample_2d, 'tn')
 
         # Evaluate attack testing samples
         for sample in self.testing_attack_reduced:
@@ -185,29 +234,41 @@ class K_Means(_Algorithm):
 
             # Classify based on threshold (above threshold = anomaly)
             if nearest > self.threshold:
-                TP += 1
+                self.TP += 1
+                self.plot += (sample_2d, 'tp')
             else:
-                FN += 1
-
-        return TP, TN, FP, FN
+                self.FN += 1
+                self.plot += (sample_2d, 'fn')
 
 class DBSCAN(_Algorithm):
+    '''
+    DBScan Clustering Algorithm
+    Optional parameters:
+        e: float, default = 0.0075
+        Epsilon
+        min: int, default = self.dimensions * 2 + 1
+            minimum samples required to form a cluster
+            https://medium.com/@tarammullin/dbscan-parameter-estimation-ff8330e3a3bd
+        p: utils.Distance, default = euclidean distance
+        distance function to use. Check @utils.py for info
+    '''
     def __init__(self, *args, **kwargs) -> None:
         super(DBSCAN, self).__init__(*args, **kwargs)
 
         self.name = "DBScan"
-        self.e = 0.0075 # Estimated from elbow plot
-        self.min_samples = 4   
+        self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
+        self.e = self.parameters.get('e') or 0.0075 # Estimated from elbow plot
+        self.min_samples = self.parameters.get('min') or self.dimensions + 2 
 
-        if 'p' in kwargs:
-            p = kwargs.get('p')
+        if 'p' in self.parameters:
+            p = self.parameters.get('p')
             self.distances = utils.Distance(p)
         else:
             self.distances = utils.Distance(False)
 
         if not self.distances:
             # Only pass distance if it is given
-            self.distances.calculate(self.training_normal_reduced, **({'d': kwargs['d']} if 'd' in kwargs else {}))
+            self.distances.calculate(self.training_normal_reduced, **({'d': self.parameters['d']} if 'd' in self.parameters else {}))
 
         # graphs.plot_eps(self.e_distance_arr, self.min_samples)
         self.clusters = self.cluster()
@@ -280,37 +341,41 @@ class DBSCAN(_Algorithm):
         return clusters
     
     def calculate_rates(self):
-        TP = TN = FP = FN = 0
+        '''
+        I found the error in the algorithm and fixed it
+        You were checking if the point didn't belong to any of the clusters, which resulted in like 0.1% of anomalies
+        I also optimized it by checking all the distances at once
+        You can delete this when making the doc
+        '''
+        self.TP = self.TN = self.FP = self.FN = 0
 
-        # Evaluate each dataset separately
+        # if you could think of different variable names it would be great!
+
+        # Evaluate each dataset separately and sum the values
         for data, is_attack in [(self.testing_attack_reduced, True), (self.testing_normal_reduced, False)]:
-            n_samples = data.shape[0]
-            labels = np.full(n_samples, -1)
+            for test_point in data:
 
-            for test_i, test_p in enumerate(data):
-                for cluster_i, cluster in enumerate(self.clusters):
-                    for core_i in cluster:
-                        core_p = self.training_normal_reduced[core_i]
-                        distance = np.linalg.norm(test_p - core_p)
-
-                        if distance <= self.e:
-                            labels[test_i] = cluster_i
-                            break
-
-                    if labels[test_i] != -1:
-                        break
-
-            # Evaluate based on the type of data
-            for _, label in enumerate(labels):
+                # Count all neighbors within epsilon radius
+                distances = cdist([test_point], self.training_normal_reduced)[0]
+                # Count how many points are within epsilon distance of the test point
+                neighbors = np.sum(distances <= self.e)
+                
+                # Point is an anomaly if it has fewer neighbors than min_samples
+                is_anomaly = neighbors < self.min_samples
+                
+                sample_2d = self.plot_pca.transform(test_point.reshape(1, -1))[0]
+                
                 if is_attack:
-                    if label == -1:
-                        TP += 1  
+                    if is_anomaly:
+                        self.TP += 1
+                        self.plot += (sample_2d, 'tp')
                     else:
-                        FN += 1
+                        self.FN += 1
+                        self.plot += (sample_2d, 'fn')
                 else:
-                    if label == -1:
-                        FP += 1
+                    if is_anomaly:
+                        self.FP += 1
+                        self.plot += (sample_2d, 'fp')
                     else:
-                        TN += 1
-
-        return TP, TN, FP, FN
+                        self.TN += 1
+                        self.plot += (sample_2d, 'tn')

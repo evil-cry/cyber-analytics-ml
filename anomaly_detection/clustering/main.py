@@ -1,5 +1,51 @@
 import algorithms
 
+def evaluate_instance(model_name, dimensions, params, data):
+    '''
+    Evaluate a model. 
+    Score is based on lowering False Positive Rate.
+    If False Negatives is >0, a heavy penalty is added.
+    '''
+
+    classes = {'kmeans': algorithms.K_Means, 'dbscan': algorithms.DBSCAN}
+    ModelClass = classes.get(model_name)
+    if not ModelClass:
+        raise ValueError("Invalid model.")
+    
+    params_str = "_".join(f"{k}={v}" for k, v in params.items())
+    graph_path = f"anomaly_detection/graphs/{model_name}/{params_str}.png"
+    
+    model = ModelClass(data, dimensions, 2, params)
+    model.draw(graph_path)
+    
+    # Apply a heavy penalty if any false negatives
+    penalty = 1000 if model.FN > 0 else 0
+    score = model.fpr * 100 + penalty
+    
+    with open(f'anomaly_detection/graphs/{model_name}/evals.txt', 'a') as f:
+        f.write(model.print_score(score))
+
+    return (score, params, graph_path)
+
+def find_best(data):
+    '''
+    Find the best model. 
+    The parameters are very different and may be correlated to each other, so values need to be changed manually.  
+    '''
+    
+    def dbscan_search():
+        '''
+        Search for the best parameters for DBSCAN. 
+        DBScan's parameters are more closely correlated than KMeans' parameters, so do a nested loop
+        '''
+        
+        # e = 75 / 10000
+        for e in range(1, 200, 10):
+            for min in range(40, 100, 10):
+                evaluate_instance('dbscan', 16, {'e': e / 10000, 'min': min}, data)
+
+    dbscan_search()
+
 def main():
     data = [
         "anomaly_detection/corpus/KDD99/training_normal.npy", 
@@ -7,9 +53,13 @@ def main():
         "anomaly_detection/corpus/KDD99/testing_attack.npy", 
     ]
 
-    k_means = algorithms.K_Means(data)
-    dbscan = algorithms.DBSCAN(data)
+    find_best(data)
 
+    #k_means = algorithms.K_Means(data, 16, 2, {'k':2})
+    #dbscan = algorithms.DBSCAN(data, 16, 2, {'min':20})
+
+    #k_means.draw('anomaly_detection/graphs/kmeans.png')
+    #dbscan.draw('anomaly_detection/graphs/dbscan.png')
 
 if __name__ == "__main__":
     main()
