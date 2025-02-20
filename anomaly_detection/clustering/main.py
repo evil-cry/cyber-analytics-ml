@@ -7,10 +7,11 @@ def main():
         "anomaly_detection/corpus/KDD99/testing_attack.npy", 
     ]
 
-    k_means = algorithms.K_Means(data, 2, 2, {'k':2})
-    #dbscan = algorithms.DBSCAN(data)
+    k_means = algorithms.K_Means(data, 16, 2, {'k':2})
+    dbscan = algorithms.DBSCAN(data, 16, 2, {'min':20})
 
     k_means.draw(True)
+    dbscan.draw(True)
 
 if __name__ == "__main__":
     main()

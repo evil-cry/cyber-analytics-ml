@@ -12,15 +12,17 @@ class Plot:
         self.title = ''
         self.xlabel = ''
         self.ylabel = ''
-        self.colors = {-1:"#FF0000", 0:"#00FF00"}
-        self.labels = {-1: "Anomaly", 0: "Normal"}
+        self.size = 8
+        self.colors = {'tp':"#FF0000", 'tn':"#00FF00", 'fp':"#0000FF", 'fn':'#000000'}
+        self.labels = {'tp': "True Positive", 'tn': "True Negative", 'fp': "False Positive", 'fn':"False Negative"}
         self.path = ''
         self.dimensions = dimensions
 
-    def configure(self, xlabel, ylabel, title = '', colors = None, labels = None, path = None):
+    def configure(self, xlabel, ylabel, title = '', size = 8, colors = None, labels = None, path = None):
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.title = title
+        self.size = size
         if colors:
             self.colors = colors
         if labels:
@@ -45,7 +47,7 @@ class Plot:
             if tag in self.colors:
                 tag_color = self.colors[tag]
             else:
-                tag_color = randint(0, 4294967296) # FFFFFF
+                tag_color = randint(0, 0xFFFFFF) # Generating a fully random color isn't the best idea for graphs on white background but this is a fallback anyway
                 tag_color = f'#{tag_color:x}'
 
             if tag in self.labels:
@@ -56,7 +58,7 @@ class Plot:
             if show:
                 matplotlib.use(interactive)
 
-            plt.scatter(x=x, y=y, c=tag_color, label=tag_label)
+            plt.scatter(x=x, y=y, c=tag_color, label=tag_label, s=self.size)
             plt.xlabel = self.xlabel
             plt.ylabel = self.ylabel
             plt.title(self.title)

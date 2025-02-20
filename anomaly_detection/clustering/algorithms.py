@@ -114,7 +114,7 @@ class K_Means(_Algorithm):
         super(K_Means, self).__init__(*args, **kwargs)
 
         self.name = "K-Means"
-        self.k = self.parameters.get('k') or 3
+        self.k = self.parameters.get('k') or 2
         self.tolerance = self.parameters.get('tolerance') or 1e-4
         self.max_iterations = self.parameters.get('max') or 100
 
@@ -198,32 +198,7 @@ class K_Means(_Algorithm):
 
         # Evaluate normal testing samples
         for sample in self.testing_normal_reduced:
-            # Compute distances from centroids
-            distances = np.linalg.norm(sample - self.centroids, axis=1)
-            
-            # Determine the closest centroid
-            nearest = np.min(distances)
 
-            # Classify based on threshold (above threshold = anomaly)
-            if nearest > self.threshold:
-                FP += 1
-            else:
-                TN += 1
-            
-            sample_2d = self.plot_pca.transform(sample.reshape(1, -1))[0]
-            self.plot += (sample_2d, -1)
-
-        # Evaluate attack testing samples
-        for sample in self.testing_attack_reduced:
-            # Compute distances from centroids
-            distances = np.linalg.norm(sample - self.centroids, axis=1)
-            nearest = np.min(distances)
-
-            # Classify based on threshold (above threshold = anomaly)
-            if nearest > self.threshold:
-                TP += 1
-            else:
-                FN += 1
 
             '''
             This single line of code made me go into an hour-long research on how to get the data into two dimension before plotting.
@@ -235,7 +210,33 @@ class K_Means(_Algorithm):
             sample_2d = self.plot_pca.transform(sample.reshape(1, -1))[0]
 
 
-            self.plot += (sample_2d, 0)
+            # Compute distances from centroids
+            distances = np.linalg.norm(sample - self.centroids, axis=1)
+            
+            # Determine the closest centroid
+            nearest = np.min(distances)
+
+            # Classify based on threshold (above threshold = anomaly)
+            if nearest > self.threshold:
+                FP += 1
+                self.plot += (sample_2d, 'fp')
+            else:
+                TN += 1
+                self.plot += (sample_2d, 'tn')
+
+        # Evaluate attack testing samples
+        for sample in self.testing_attack_reduced:
+            # Compute distances from centroids
+            distances = np.linalg.norm(sample - self.centroids, axis=1)
+            nearest = np.min(distances)
+
+            # Classify based on threshold (above threshold = anomaly)
+            if nearest > self.threshold:
+                TP += 1
+                self.plot += (sample_2d, 'tp')
+            else:
+                FN += 1
+                self.plot += (sample_2d, 'fn')
 
         return TP, TN, FP, FN
 
@@ -244,8 +245,8 @@ class DBSCAN(_Algorithm):
         super(DBSCAN, self).__init__(*args, **kwargs)
 
         self.name = "DBScan"
-        self.e = 0.0075 # Estimated from elbow plot
-        self.min_samples = 4   
+        self.e = self.parameters.get('e') or 0.0075 # Estimated from elbow plot
+        self.min_samples = self.parameters.get('min') or 4   
 
         if 'p' in self.parameters:
             p = self.parameters.get('p')
@@ -328,38 +329,43 @@ class DBSCAN(_Algorithm):
         return clusters
     
     def calculate_rates(self):
+        '''
+        I found the error in the algorithm and fixed it
+        You were checking if the point didn't belong to any of the clusters, which resulted in like 0.1% of anomalies
+        I also optimized it by checking all the distances at once
+        You can delete this when making the doc
+        '''
         TP = TN = FP = FN = 0
 
-        # Evaluate each dataset separately
+        # if you could think of different variable names it would be great!
+
+        # Evaluate each dataset separately and sum the values
         for data, is_attack in [(self.testing_attack_reduced, True), (self.testing_normal_reduced, False)]:
-            n_samples = data.shape[0]
-            labels = np.full(n_samples, -1)
+            for test_point in data:
 
-            for test_i, test_p in enumerate(data):
-                for cluster_i, cluster in enumerate(self.clusters):
-                    for core_i in cluster:
-                        core_p = self.training_normal_reduced[core_i]
-                        distance = np.linalg.norm(test_p - core_p)
-
-                        if distance <= self.e:
-                            labels[test_i] = cluster_i
-
-                            break
-
-                    if labels[test_i] != -1:
-                        break
-
-            # Evaluate based on the type of data
-            for _, label in enumerate(labels):
+                # Count all neighbors within epsilon radius
+                distances = cdist([test_point], self.training_normal_reduced)[0]
+                # Count how many points are within epsilon distance of the test point
+                neighbors = np.sum(distances <= self.e)
+                
+                # Point is an anomaly if it has fewer neighbors than min_samples
+                is_anomaly = neighbors < self.min_samples
+                
+                sample_2d = self.plot_pca.transform(test_point.reshape(1, -1))[0]
+                
                 if is_attack:
-                    if label == -1:
-                        TP += 1  
+                    if is_anomaly:
+                        TP += 1
+                        self.plot += (sample_2d, 'tp')
                     else:
                         FN += 1
+                        self.plot += (sample_2d, 'fn')
                 else:
-                    if label == -1:
+                    if is_anomaly:
                         FP += 1
+                        self.plot += (sample_2d, 'fp')
                     else:
                         TN += 1
+                        self.plot += (sample_2d, 'tn')
 
         return TP, TN, FP, FN
