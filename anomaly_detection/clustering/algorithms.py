@@ -105,24 +105,24 @@ class K_Means(_Algorithm):
     '''
     K-Means Clustering Algorithm
     Optional parameters:
-        k: int, default = 3
+        k: int, default = 85
            Number of clusters (k)
-        tolerance: float, default = 1e-4
+        tolerance: float, default = 0.0001
             Tolerance for centroid convergence
         max: int, default = 100
            Maximum iterations for the clustering process
-        threshold: float, default = 95
+        threshold: float, default = 96
             Threshold for anomaly detection (95th percentile of normal data)
     '''
     def __init__(self, *args, **kwargs) -> None:
         super(K_Means, self).__init__(*args, **kwargs)
         self.name = "K-Means"
         self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
-        self.k = self.parameters.get('k') or 2
-        self.tolerance = self.parameters.get('tolerance') or 1e-4
+        self.k = self.parameters.get('k') or 85
+        self.tolerance = self.parameters.get('tolerance') or 0.0001
         self.max_iterations = self.parameters.get('max') or 100
 
-        threshold = self.parameters.get('threshold') or 95
+        threshold = self.parameters.get('threshold') or 96
         self.threshold = np.percentile(self.training_normal_reduced, threshold)
 
         self.centroids = self.cluster()
@@ -244,11 +244,11 @@ class DBSCAN(_Algorithm):
     '''
     DBScan Clustering Algorithm
     Optional parameters:
-        e: float, default = 0.0075
+        e: float, default = 0.0146
         Epsilon
-        min: int, default = self.dimensions * 2 + 1
+        min: int, default = 2
             minimum samples required to form a cluster
-            https://medium.com/@tarammullin/dbscan-parameter-estimation-ff8330e3a3bd
+            https://medium.com/@tarammullin/dbscan-parameter-estimation-ff8330e3a3bd - This suggest that high min should work best, for some reason that's not the case
         p: utils.Distance, default = euclidean distance
         distance function to use. Check @utils.py for info
     '''
@@ -257,8 +257,8 @@ class DBSCAN(_Algorithm):
 
         self.name = "DBScan"
         self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
-        self.e = self.parameters.get('e') or 0.0075 # Estimated from elbow plot
-        self.min_samples = self.parameters.get('min') or self.dimensions + 2 
+        self.e = self.parameters.get('e') or 0.0146 # Estimated from elbow plot
+        self.min_samples = self.parameters.get('min') or 2
 
         if 'p' in self.parameters:
             p = self.parameters.get('p')

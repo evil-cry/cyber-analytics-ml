@@ -18,8 +18,8 @@ def evaluate_instance(model_name, dimensions, params, data):
     model = ModelClass(data, dimensions, 2, params)
     model.draw(graph_path)
     
-    # Apply a heavy penalty if any false negatives
-    penalty = 1000 if model.FN > 0 else 0
+    # Apply a heavy penalty if false negatives > 1 (account for very small noise)
+    penalty = 1000 if model.FN > 1 else 0
     score = model.fpr * 100 + penalty
     
     with open(f'anomaly_detection/graphs/{model_name}/evals.txt', 'a') as f:
@@ -39,12 +39,29 @@ def find_best(data):
         DBScan's parameters are more closely correlated than KMeans' parameters, so do a nested loop
         '''
         
-        # e = 75 / 10000
-        for e in range(70, 111, 1):
+        # Best 
+        # e = 0.0146
+        # min=2
+        for e in range(170, 200, 1):
             for min in range(2, 3, 1):
                 evaluate_instance('dbscan', 16, {'e': e / 10000, 'min': min}, data)
+    
+    def kmeans_search():
+        '''
+        Search for the best parameters for KMeans.
+        These are not as correlated as dbscan's, so check them separately 
+        '''
 
-    dbscan_search()
+        # Best
+        # k = 85
+        # tolerance = 0.0001
+        # max = 100
+        # threshold = 96
+        for threshold in range(99, 70, -1):
+            evaluate_instance('kmeans', 16, {'threshold': threshold}, data)
+
+    #dbscan_search()
+    kmeans_search()
 
 def main():
     data = [
@@ -53,12 +70,12 @@ def main():
         "anomaly_detection/corpus/KDD99/testing_attack.npy", 
     ]
 
-    find_best(data)
+    #find_best(data)
 
-    #k_means = algorithms.K_Means(data, 16, 2, {'k':2})
-    #dbscan = algorithms.DBSCAN(data, 16, 2, {'e':0.009, 'min':2})
+    k_means = algorithms.K_Means(data, 16, 2)
+    #dbscan = algorithms.DBSCAN(data, 16, 2)
 
-    #k_means.draw('anomaly_detection/graphs/kmeans.png')
+    k_means.draw('anomaly_detection/graphs/kmeans.png')
     #dbscan.draw('anomaly_detection/graphs/dbscan.png')
 
 if __name__ == "__main__":
