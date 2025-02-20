@@ -1,5 +1,28 @@
 import algorithms
 
+def evaluate_instance(model, dimensions, params, data):
+    '''
+    Evaluate a model. 
+    Score is based on lowering False Positive Rate.
+    If False Negatives is >0, a heavy penalty is added.
+    '''
+
+    classes = {'kmeans': algorithms.KMeans, 'dbscan': algorithms.DBSCAN}
+    ModelClass = classes.get(model)
+    if not ModelClass:
+        raise ValueError("Invalid model.")
+    
+    params_str = "_".join(f"{k}={v}" for k, v in params.items())
+    graph_path = f"anomaly_detection/graphs/{model}/{params_str}.png"
+    
+    model = ModelClass(data, dimensions, 2, params)
+    model.draw(graph_path)
+    
+    # Apply a heavy penalty if any false negatives
+    penalty = 1000 if model.FN > 0 else 0
+    score = model.fpr * 100 + penalty
+    return (score, params, graph_path)
+
 def main():
     data = [
         "anomaly_detection/corpus/KDD99/training_normal.npy", 

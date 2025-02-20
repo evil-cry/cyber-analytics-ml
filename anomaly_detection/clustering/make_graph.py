@@ -57,6 +57,7 @@ class Plot:
 
             plt.scatter(x=x, y=y, c=tag_color, label=tag_label, s=self.size, alpha=0.2)
 
+        plt.legend()
         plt.savefig(path, dpi=1200)
 
 def plot_eps(data: np.array, min_pts: int) -> None:

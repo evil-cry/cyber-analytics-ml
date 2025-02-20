@@ -52,37 +52,36 @@ class _Algorithm():
         plot_pca.fit(self.training_normal_reduced)
         self.plot_pca = plot_pca
 
-    def calculate_metrics(self, TP: int, FP: int, TN: int, FN: int) -> dict:
+    def calculate_metrics(self) -> dict:
         '''
         Calculate metrics based on TP, FP, TN, FN
         '''
-
+        TP, TN, FP, FN = self.TP, self.TN, self.FP, self.FN
         try:
-            accuracy = (TP + TN) / (TP + FP + TN + FN)
-            tpr = TP / (TP + FN)
-            fpr = FP / (TN + FP)
-            f1 = (2 * TP) / ((2 * TP) + FP + FN)
+            self.accuracy = (TP + TN) / (TP + FP + TN + FN)
+            self.tpr = TP / (TP + FN)
+            self.fpr = FP / (TN + FP)
+            self.f1 = (2 * TP) / ((2 * TP) + FP + FN)
 
         except ZeroDivisionError:
-            accuracy = 0
-            tpr = 0
-            fpr = 0
-            f1 = 0
+            self.accuracy = 0
+            self.tpr = 0
+            self.fpr = 0
+            self.f1 = 0
 
         self.metrics = {
-            'accuracy': accuracy * 100,
-            'tpr': tpr * 100,
-            'fpr': fpr * 100,
-            'f1': f1 * 100
+            'accuracy': self.accuracy * 100,
+            'tpr': self.tpr * 100,
+            'fpr': self.fpr * 100,
+            'f1': self.f1 * 100
         }
 
     def evaluate(self):
-        TP, TN, FP, FN = self.calculate_rates()
-
-        self.calculate_metrics(TP, FP, TN, FN)
+        self.calculate_rates()
+        self.calculate_metrics()
 
         print(self.name)
-        print(f"Clustering results: TP={TP}, FP={FP}, TN={TN}, FN={FN}")
+        print(f"Clustering results: TP={self.TP}, FP={self.FP}, TN={self.TN}, FN={self.FN}")
         print(f"Accuracy: {self.metrics['accuracy']:.2f}%")
         print(f"True Positive Rate: {self.metrics['tpr']:.2f}%")
         print(f"False Positive Rate: {self.metrics['fpr']:.2f}%")
@@ -193,7 +192,7 @@ class K_Means(_Algorithm):
         - False Positives (FP): Normal data misclassified as anomalies
         - False Negatives (FN): Anomalies misclassified as normal
         '''
-        TP = TN = FP = FN = 0
+        self.TP = self.TN = self.FP = self.FN = 0
 
         # Evaluate normal testing samples
         for sample in self.testing_normal_reduced:
@@ -217,10 +216,10 @@ class K_Means(_Algorithm):
 
             # Classify based on threshold (above threshold = anomaly)
             if nearest > self.threshold:
-                FP += 1
+                self.FP += 1
                 self.plot += (sample_2d, 'fp')
             else:
-                TN += 1
+                self.TN += 1
                 self.plot += (sample_2d, 'tn')
 
         # Evaluate attack testing samples
@@ -231,13 +230,11 @@ class K_Means(_Algorithm):
 
             # Classify based on threshold (above threshold = anomaly)
             if nearest > self.threshold:
-                TP += 1
+                self.TP += 1
                 self.plot += (sample_2d, 'tp')
             else:
-                FN += 1
+                self.FN += 1
                 self.plot += (sample_2d, 'fn')
-
-        return TP, TN, FP, FN
 
 class DBSCAN(_Algorithm):
     def __init__(self, *args, **kwargs) -> None:
@@ -335,7 +332,7 @@ class DBSCAN(_Algorithm):
         I also optimized it by checking all the distances at once
         You can delete this when making the doc
         '''
-        TP = TN = FP = FN = 0
+        self.TP = self.TN = self.FP = self.FN = 0
 
         # if you could think of different variable names it would be great!
 
@@ -355,17 +352,15 @@ class DBSCAN(_Algorithm):
                 
                 if is_attack:
                     if is_anomaly:
-                        TP += 1
+                        self.TP += 1
                         self.plot += (sample_2d, 'tp')
                     else:
-                        FN += 1
+                        self.FN += 1
                         self.plot += (sample_2d, 'fn')
                 else:
                     if is_anomaly:
-                        FP += 1
+                        self.FP += 1
                         self.plot += (sample_2d, 'fp')
                     else:
-                        TN += 1
+                        self.TN += 1
                         self.plot += (sample_2d, 'tn')
-
-        return TP, TN, FP, FN
