@@ -1,4 +1,9 @@
-import os
+# AI Usage Statement
+# Tools Used: o1, o3-mini, o1-mini, gpt-4o (no one could answer my question)
+# - Usage: Transforming data into 2 dimensions before plotting
+# - Verification: Comparing the plots before and after the change
+# Prohibited Use Compliance: Confirmed
+
 import numpy as np
 import logging
 from sklearn import decomposition, metrics
@@ -21,11 +26,8 @@ class _Algorithm():
         self.dimensions = dimensions
         self.parameters = parameters
 
-        self.load_corpus()
         self.plot = make_graph.Plot(plot_dimensions)
-
-        self.normal_count = len(self.testing_normal_reduced)
-        self.attack_count = len(self.testing_attack_reduced)
+        self.load_corpus()
 
     def load_corpus(self) -> None:
         for i in range(len(self.corpus)):
@@ -37,15 +39,18 @@ class _Algorithm():
         self.testing_attack = self.corpus[2]
 
         pca = decomposition.PCA(n_components=self.dimensions)
+        plot_pca = decomposition.PCA(n_components=self.plot.dimensions)
 
         # Only fit the training data
-        self.training_normal_reduced = pca.fit(self.training_normal)
+        pca.fit(self.training_normal)
         self.pca = pca
 
-        if self.dimensions:
-            self.training_normal_reduced = pca.transform(self.training_normal)
-            self.testing_normal_reduced = pca.transform(self.testing_normal)
-            self.testing_attack_reduced = pca.transform(self.testing_attack)
+        self.training_normal_reduced = pca.transform(self.training_normal)
+        self.testing_normal_reduced = pca.transform(self.testing_normal)
+        self.testing_attack_reduced = pca.transform(self.testing_attack)
+            
+        plot_pca.fit(self.training_normal_reduced)
+        self.plot_pca = plot_pca
 
     def calculate_metrics(self, TP: int, FP: int, TN: int, FN: int) -> dict:
         '''
@@ -204,8 +209,9 @@ class K_Means(_Algorithm):
                 FP += 1
             else:
                 TN += 1
-
-            self.plot += (sample, -1)
+            
+            sample_2d = self.plot_pca.transform(sample.reshape(1, -1))[0]
+            self.plot += (sample_2d, -1)
 
         # Evaluate attack testing samples
         for sample in self.testing_attack_reduced:
@@ -218,8 +224,18 @@ class K_Means(_Algorithm):
                 TP += 1
             else:
                 FN += 1
-            
-            self.plot += (sample, 0)
+
+            '''
+            This single line of code made me go into an hour-long research on how to get the data into two dimension before plotting.
+            At first, I didn't think of simply transforming a single sample. I couldn't find anything on the internet regarding this - our use case seems pretty rare.
+            I don't use AIs for coding this, only for general questions regarding algorithms.
+            Not a single model I tried answered my question in a helpful way. 
+            Finally, through experimentation and lots of wasted openai tokens (a whopping 50 cents worth of them), this line was made. 
+            '''
+            sample_2d = self.plot_pca.transform(sample.reshape(1, -1))[0]
+
+
+            self.plot += (sample_2d, 0)
 
         return TP, TN, FP, FN
 
