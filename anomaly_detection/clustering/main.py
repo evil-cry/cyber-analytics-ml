@@ -7,7 +7,7 @@ def evaluate_instance(model, dimensions, params, data):
     If False Negatives is >0, a heavy penalty is added.
     '''
 
-    classes = {'kmeans': algorithms.KMeans, 'dbscan': algorithms.DBSCAN}
+    classes = {'kmeans': algorithms.K_Means, 'dbscan': algorithms.DBSCAN}
     ModelClass = classes.get(model)
     if not ModelClass:
         raise ValueError("Invalid model.")
