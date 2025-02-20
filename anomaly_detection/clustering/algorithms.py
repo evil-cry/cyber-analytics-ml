@@ -1,8 +1,10 @@
-# AI Usage Statement
-# Tools Used: o1, o3-mini, o1-mini, gpt-4o (no one could answer my question)
-# - Usage: Transforming data into 2 dimensions before plotting
-# - Verification: Comparing the plots before and after the change
-# Prohibited Use Compliance: Confirmed
+'''
+AI Usage Statement
+Tools Used: o1, o3-mini, o1-mini, gpt-4o (no one could answer my question)
+- Usage: Transforming data into 2 dimensions before plotting
+- Verification: Comparing the plots before and after the change
+Prohibited Use Compliance: Confirmed
+'''
 
 import numpy as np
 import logging
@@ -21,7 +23,16 @@ logger = logging.getLogger(__name__)
 logging.disable(50)
 
 class _Algorithm():
+    '''
+    Represents a generic clustering algorithm
+    '''
+
     def __init__(self, corpus: list, dimensions: int = 2, plot_dimensions:int = 2, parameters = {}) -> None:
+        '''
+        Prepares data for each clustering algorithm
+        Loads and reduces each data set to the specified dimensions
+        '''
+        
         self.corpus = deepcopy(corpus) 
         self.dimensions = dimensions
         self.parameters = parameters
@@ -30,6 +41,10 @@ class _Algorithm():
         self.load_corpus()
 
     def load_corpus(self) -> None:
+        '''
+        Loads each numpy dataset and reduces the data to the specified dimensions
+        '''
+
         for i in range(len(self.corpus)):
             self.corpus[i] = np.load(self.corpus[i])
 
@@ -56,6 +71,7 @@ class _Algorithm():
         '''
         Calculate metrics based on TP, FP, TN, FN
         '''
+
         TP, TN, FP, FN = self.TP, self.TN, self.FP, self.FN
         try:
             self.accuracy = (TP + TN) / (TP + FP + TN + FN)
@@ -77,16 +93,20 @@ class _Algorithm():
         }
 
     def evaluate(self):
+        '''
+        Evaluates the clustering algorithm based on classification
+        '''
+
         self.calculate_rates()
         self.calculate_metrics()
 
-        print(self.name)
-        print(f"Clustering results: TP={self.TP}, FP={self.FP}, TN={self.TN}, FN={self.FN}")
-        print(f"Accuracy: {self.metrics['accuracy']:.2f}%")
-        print(f"True Positive Rate: {self.metrics['tpr']:.2f}%")
-        print(f"False Positive Rate: {self.metrics['fpr']:.2f}%")
-        print(f"F1 Score: {self.metrics['f1']:.2f}%")
-        print()
+        logger.info(self.name)
+        logger.info(f"Clustering results: TP={self.TP}, FP={self.FP}, TN={self.TN}, FN={self.FN}")
+        logger.info(f"Accuracy: {self.metrics['accuracy']:.2f}%")
+        logger.info(f"True Positive Rate: {self.metrics['tpr']:.2f}%")
+        logger.info(f"False Positive Rate: {self.metrics['fpr']:.2f}%")
+        logger.info(f"F1 Score: {self.metrics['f1']:.2f}%")
+        logger.info()
 
     def cluster(self):
         raise NotImplementedError
@@ -114,6 +134,7 @@ class K_Means(_Algorithm):
         threshold: float, default = 95
             Threshold for anomaly detection (95th percentile of normal data)
     '''
+
     def __init__(self, *args, **kwargs) -> None:
         super(K_Means, self).__init__(*args, **kwargs)
         self.name = "K-Means"
@@ -128,10 +149,9 @@ class K_Means(_Algorithm):
         self.centroids = self.cluster()
         self.evaluate()
 
-
     def cluster(self) -> np.array:
         '''
-        Trains the model
+        Identifies centroids for each cluster
         
         Steps:
         1. Initalizes k centroids at random
@@ -196,11 +216,11 @@ class K_Means(_Algorithm):
         - False Positives (FP): Normal data misclassified as anomalies
         - False Negatives (FN): Anomalies misclassified as normal
         '''
+
         self.TP = self.TN = self.FP = self.FN = 0
 
         # Evaluate normal testing samples
         for sample in self.testing_normal_reduced:
-
 
             '''
             This single line of code made me go into an hour-long research on how to get the data into two dimension before plotting.
@@ -210,7 +230,6 @@ class K_Means(_Algorithm):
             Finally, through experimentation and lots of wasted openai tokens (a whopping 50 cents worth of them), this line was made. 
             '''
             sample_2d = self.plot_pca.transform(sample.reshape(1, -1))[0]
-
 
             # Compute distances from centroids
             distances = np.linalg.norm(sample - self.centroids, axis=1)
@@ -243,6 +262,7 @@ class K_Means(_Algorithm):
 class DBSCAN(_Algorithm):
     '''
     DBScan Clustering Algorithm
+
     Optional parameters:
         e: float, default = 0.0075
         Epsilon
@@ -250,8 +270,9 @@ class DBSCAN(_Algorithm):
             minimum samples required to form a cluster
             https://medium.com/@tarammullin/dbscan-parameter-estimation-ff8330e3a3bd
         p: utils.Distance, default = euclidean distance
-        distance function to use. Check @utils.py for info
+        distance function to use. Check /clustering/utils.py for info
     '''
+
     def __init__(self, *args, **kwargs) -> None:
         super(DBSCAN, self).__init__(*args, **kwargs)
 
@@ -267,20 +288,12 @@ class DBSCAN(_Algorithm):
             self.distances = utils.Distance(False)
 
         if not self.distances:
-            # Only pass distance if it is given
             self.distances.calculate(self.training_normal_reduced, **({'d': self.parameters['d']} if 'd' in self.parameters else {}))
 
-        # graphs.plot_eps(self.e_distance_arr, self.min_samples)
         self.clusters = self.cluster()
 
         logger.debug(f"Clusters identified: {len(self.clusters)}")
 
-        # I don't think we need to separate evaluations
-        '''
-        print("--- Clustering normal data ---")
-        self.evaluate(self.testing_normal_reduced)
-        '''
-        
         self.evaluate()
 
     def cluster(self) -> list[list[int]]:
@@ -293,9 +306,11 @@ class DBSCAN(_Algorithm):
         core_pts = set()
         non_core_pts = set()
 
+        # Identify core and non-core points
         for i in range(self.training_normal_reduced.shape[0]):
             distance = self.distances[i]
 
+            # Count the number of neighbors within epsilon distance
             n = np.sum(distance < self.e)
 
             if n <= self.min_samples:
@@ -313,15 +328,16 @@ class DBSCAN(_Algorithm):
 
         # Cluster core points
         for core in core_pts:
+            # Skip if the core point has already been visited
             if core not in visited:
-                # Create new cluster
                 cluster = []
                 unchecked_points = [core]
 
+                # Visit all points in the cluster
                 while unchecked_points:
-                    p = unchecked_points.pop()
+                    p = unchecked_points.pop() # Get the last point
 
-                    if p not in visited:
+                    if p not in visited: # Skip if the point has already been visited
                         visited.add(p)
                         cluster.append(p)
 
@@ -331,9 +347,9 @@ class DBSCAN(_Algorithm):
 
                         # Determine if the point is a core point
                         if p in core_pts:
-                            for neighbor in n:
-                                if neighbor not in visited:
-                                    unchecked_points.append(int(neighbor))
+                            for neighbor in n: # Add neighbors to the unchecked list
+                                if neighbor not in visited: # Skip if the point has already been visited
+                                    unchecked_points.append(int(neighbor)) # Add the neighbor to the unchecked list
 
                 # Add cluster to list of clusters
                 clusters.append(cluster)
@@ -342,29 +358,28 @@ class DBSCAN(_Algorithm):
     
     def calculate_rates(self):
         '''
-        I found the error in the algorithm and fixed it
-        You were checking if the point didn't belong to any of the clusters, which resulted in like 0.1% of anomalies
-        I also optimized it by checking all the distances at once
-        You can delete this when making the doc
-        '''
-        self.TP = self.TN = self.FP = self.FN = 0
+        Evaluates and classifies testing data based on clustering
 
-        # if you could think of different variable names it would be great!
+        Calculates the classification rates: 
+        - True Positives (TP): Correctly identified anomalies
+        - True Negatives (TN): Correctly identified normal data
+        - False Positives (FP): Normal data misclassified as anomalies
+        - False Negatives (FN): Anomalies misclassified as normal
+        '''
+
+        self.TP = self.TN = self.FP = self.FN = 0
 
         # Evaluate each dataset separately and sum the values
         for data, is_attack in [(self.testing_attack_reduced, True), (self.testing_normal_reduced, False)]:
             for test_point in data:
-
-                # Count all neighbors within epsilon radius
-                distances = cdist([test_point], self.training_normal_reduced)[0]
-                # Count how many points are within epsilon distance of the test point
-                neighbors = np.sum(distances <= self.e)
+                distances = cdist([test_point], self.training_normal_reduced)[0] # Get distances between test point and training data
+                neighbors = np.sum(distances <= self.e) # Count the number of neighbors within epsilon distance
                 
-                # Point is an anomaly if it has fewer neighbors than min_samples
-                is_anomaly = neighbors < self.min_samples
+                is_anomaly = neighbors < self.min_samples # Compare the number of neighbors to the minimum samples
                 
-                sample_2d = self.plot_pca.transform(test_point.reshape(1, -1))[0]
+                sample_2d = self.plot_pca.transform(test_point.reshape(1, -1))[0] # Add point to 2d plot of testing data
                 
+                # Assign the point to the correct classification
                 if is_attack:
                     if is_anomaly:
                         self.TP += 1
