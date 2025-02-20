@@ -8,7 +8,9 @@ def main():
     ]
 
     k_means = algorithms.K_Means(data)
-    dbscan = algorithms.DBSCAN(data)
+    #dbscan = algorithms.DBSCAN(data)
+
+    k_means.draw(True)
 
 
 if __name__ == "__main__":

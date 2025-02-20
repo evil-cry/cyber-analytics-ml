@@ -5,6 +5,7 @@ from sklearn import decomposition, metrics
 from scipy.spatial.distance import cdist
 import utils
 from copy import deepcopy
+import make_graph
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -12,7 +13,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-logger.propagate = False
+logger.disable()
 
 class _Algorithm():
     def __init__(self, corpus: list, dimensions: int = 2) -> None:
@@ -20,7 +21,7 @@ class _Algorithm():
         self.dimensions = dimensions
         self.load_corpus()
 
-        self.graph_points = []
+        self.plot = make_graph.Plot()
 
         self.normal_count = len(self.testing_normal_reduced)
         self.attack_count = len(self.testing_attack_reduced)
@@ -82,18 +83,37 @@ class _Algorithm():
     
     def calculate_rates(self):
         raise NotImplementedError
+    
+    def draw(self, show = False):
+        self.plot.draw(show)
 
 class K_Means(_Algorithm):
+    '''
+    K-Means Clustering Algorithm
+    Optional kwargs parameters:
+        k: int, default = 3
+           Number of clusters (k)
+        tolerance: float, default = 1e-4
+            Tolerance for centroid convergence
+        max: int, default = 100
+           Maximum iterations for the clustering process
+        threshold: float, default = 95
+            Threshold for anomaly detection (95th percentile of normal data)
+    '''
     def __init__(self, *args, **kwargs) -> None:
         super(K_Means, self).__init__(*args, **kwargs)
 
-        self.name = "K-Means"                                               # Algorithm name
-        self.k = 3                                                          # Number of clusters (k)
-        self.tolerance = 1e-4                                               # Tolerance for centroid convergence
-        self.max_iterations = 100                                           # Maximum iterations for the clustering process
-        self.threshold = np.percentile(self.training_normal_reduced, 95)    # Threshold for anomaly detection (95th percentile of normal data)
-        self.centroids = self.cluster()                                     # Train the model by identifying cluster centroids
-        self.evaluate()                                                     # Evaluate model performance
+        self.name = "K-Means"
+        self.k = kwargs.get('k') or 3
+        self.tolerance = kwargs.get('tolerance') or 1e-4
+        self.max_iterations = kwargs.get('max') or 100
+
+        threshold = kwargs.get('threshold') or 95
+        self.threshold = np.percentile(self.training_normal_reduced, threshold)
+
+        self.plot.configure('X', 'Y', title=f"{self.name}:{kwargs}")
+        self.centroids = self.cluster()
+        self.evaluate()
 
 
     def cluster(self) -> np.array:
@@ -176,9 +196,10 @@ class K_Means(_Algorithm):
             # Classify based on threshold (above threshold = anomaly)
             if nearest > self.threshold:
                 FP += 1
-                self.graph_points += (-1, nearest)
             else:
                 TN += 1
+
+            self.plot += (sample, -1)
 
         # Evaluate attack testing samples
         for sample in self.testing_attack_reduced:
@@ -191,6 +212,8 @@ class K_Means(_Algorithm):
                 TP += 1
             else:
                 FN += 1
+            
+            self.plot += (sample, 0)
 
         return TP, TN, FP, FN
 
