@@ -97,6 +97,10 @@ class _Algorithm():
     def draw(self, path):
         self.plot.draw(path)
 
+    def print_score(self, score):
+        params_str = ",".join(f"{k}={v}" for k, v in self.parameters.items())
+        return f'{self.name}:{params_str}:{score}\n'
+
 class K_Means(_Algorithm):
     '''
     K-Means Clustering Algorithm
@@ -237,13 +241,24 @@ class K_Means(_Algorithm):
                 self.plot += (sample_2d, 'fn')
 
 class DBSCAN(_Algorithm):
+    '''
+    DBScan Clustering Algorithm
+    Optional parameters:
+        e: float, default = 0.0075
+        Epsilon
+        min: int, default = self.dimensions * 2 + 1
+            minimum samples required to form a cluster
+            https://medium.com/@tarammullin/dbscan-parameter-estimation-ff8330e3a3bd
+        p: utils.Distance, default = euclidean distance
+        distance function to use. Check @utils.py for info
+    '''
     def __init__(self, *args, **kwargs) -> None:
         super(DBSCAN, self).__init__(*args, **kwargs)
 
         self.name = "DBScan"
         self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
         self.e = self.parameters.get('e') or 0.0075 # Estimated from elbow plot
-        self.min_samples = self.parameters.get('min') or 20  
+        self.min_samples = self.parameters.get('min') or self.dimensions + 2 
 
         if 'p' in self.parameters:
             p = self.parameters.get('p')
