@@ -20,6 +20,8 @@ class _Algorithm():
         self.dimensions = dimensions
         self.load_corpus()
 
+        self.graph_points = []
+
         self.normal_count = len(self.testing_normal_reduced)
         self.attack_count = len(self.testing_attack_reduced)
 
@@ -86,7 +88,7 @@ class K_Means(_Algorithm):
         super(K_Means, self).__init__(*args, **kwargs)
 
         self.name = "K-Means"
-        self.k = 3
+        self.k = 2
         self.tolerance = 1e-4
         self.max_iterations = 100
         self.threshold = np.percentile(self.training_normal_reduced, 95)
@@ -151,6 +153,7 @@ class K_Means(_Algorithm):
 
             if nearest > self.threshold:
                 FP += 1
+                self.graph_points += (-1, nearest)
             else:
                 TN += 1
 
@@ -269,6 +272,7 @@ class DBSCAN(_Algorithm):
 
                         if distance <= self.e:
                             labels[test_i] = cluster_i
+
                             break
 
                     if labels[test_i] != -1:
