@@ -18,8 +18,8 @@ def evaluate_instance(model_name, dimensions, params, data):
     model = ModelClass(data, dimensions, 2, params)
     model.draw(graph_path)
     
-    # Apply a heavy penalty if false negatives > 1 (account for very small noise)
-    penalty = 1000 if model.FN > 1 else 0
+    # Apply a heavy penalty if false negatives > 0
+    penalty = 1000 if model.FN > 0 else 0
     score = model.fpr * 100 + penalty
     
     with open(f'anomaly_detection/graphs/{model_name}/evals.txt', 'a') as f:
@@ -57,8 +57,8 @@ def find_best(data):
         # tolerance = 0.0001
         # max = 100
         # threshold = 96
-        for threshold in range(99, 70, -1):
-            evaluate_instance('kmeans', 16, {'threshold': threshold}, data)
+        for k in range(40, 85, 3):
+            evaluate_instance('kmeans', 16, {'k': k}, data)
 
     #dbscan_search()
     kmeans_search()

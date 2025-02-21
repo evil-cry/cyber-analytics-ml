@@ -105,24 +105,24 @@ class K_Means(_Algorithm):
     '''
     K-Means Clustering Algorithm
     Optional parameters:
-        k: int, default = 85
+        k: int, default = 79
            Number of clusters (k)
         tolerance: float, default = 0.0001
             Tolerance for centroid convergence
         max: int, default = 100
            Maximum iterations for the clustering process
-        threshold: float, default = 96
+        threshold: float, default = 95
             Threshold for anomaly detection (95th percentile of normal data)
     '''
     def __init__(self, *args, **kwargs) -> None:
         super(K_Means, self).__init__(*args, **kwargs)
         self.name = "K-Means"
         self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
-        self.k = self.parameters.get('k') or 85
+        self.k = self.parameters.get('k') or 79
         self.tolerance = self.parameters.get('tolerance') or 0.0001
         self.max_iterations = self.parameters.get('max') or 100
 
-        threshold = self.parameters.get('threshold') or 96
+        threshold = self.parameters.get('threshold') or 95
         self.threshold = np.percentile(self.training_normal_reduced, threshold)
 
         self.centroids = self.cluster()
