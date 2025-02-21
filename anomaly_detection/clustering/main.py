@@ -57,8 +57,8 @@ def find_best(data):
         # tolerance = 0.0001
         # max = 100
         # threshold = 95
-        for k in range(40, 85, 3):
-            evaluate_instance('kmeans', 16, {'k': k}, data)
+        for d in range(1, 42, 1):
+            evaluate_instance('kmeans', d, {}, data)
 
     #dbscan_search()
     kmeans_search()
