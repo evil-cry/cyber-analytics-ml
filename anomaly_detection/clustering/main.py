@@ -41,7 +41,7 @@ def find_best(data):
         
         # Best 
         # e = 0.0146
-        # min=2
+        # min = 2
         for e in range(170, 200, 1):
             for min in range(2, 3, 1):
                 evaluate_instance('dbscan', 16, {'e': e / 10000, 'min': min}, data)
@@ -53,10 +53,10 @@ def find_best(data):
         '''
 
         # Best
-        # k = 85
+        # k = 79
         # tolerance = 0.0001
         # max = 100
-        # threshold = 96
+        # threshold = 95
         for k in range(40, 85, 3):
             evaluate_instance('kmeans', 16, {'k': k}, data)
 
