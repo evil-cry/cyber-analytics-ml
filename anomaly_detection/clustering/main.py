@@ -79,14 +79,14 @@ def main():
         "anomaly_detection/corpus/KDD99/testing_attack.npy", 
     ]
 
-    find_best(data)
+    #find_best(data)
 
     # 18 dimensions was found to be the best for kmeans experimentally 
-    #k_means = algorithms.K_Means(data, 18, 2)
-    #dbscan = algorithms.DBSCAN(data, 18, 2)
+    k_means = algorithms.K_Means(data, 18, 2)
+    dbscan = algorithms.DBSCAN(data, 18, 2)
 
-    #k_means.draw('anomaly_detection/graphs/kmeans.png')
-    #dbscan.draw('anomaly_detection/graphs/dbscan.png')
+    k_means.draw('anomaly_detection/graphs/kmeans.png')
+    dbscan.draw('anomaly_detection/graphs/dbscan.png')
 
 if __name__ == "__main__":
     main()
