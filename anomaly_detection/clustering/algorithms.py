@@ -23,11 +23,7 @@ logger = logging.getLogger(__name__)
 logging.disable(50)
 
 class _Algorithm():
-    '''
-    Represents a generic clustering algorithm
-    '''
-
-    def __init__(self, corpus: list, dimensions: int = 2, plot_dimensions:int = 2, parameters = {}) -> None:
+    def __init__(self, corpus: list, dimensions: int = 18, plot_dimensions:int = 2, parameters = {}) -> None:
         '''
         Prepares data for each clustering algorithm
         Loads and reduces each data set to the specified dimensions
@@ -118,16 +114,16 @@ class _Algorithm():
         self.plot.draw(path)
 
     def print_score(self, score):
-        params_str = ",".join(f"{k}={v}" for k, v in self.parameters.items())
+        params_str = ",".join(f"{k}={v:.4f}" for k, v in self.parameters.items())
         return f'{self.name}:{params_str}:{score}\n'
 
 class K_Means(_Algorithm):
     '''
     K-Means Clustering Algorithm
     Optional parameters:
-        k: int, default = 3
+        k: int, default = 79
            Number of clusters (k)
-        tolerance: float, default = 1e-4
+        tolerance: float, default = 0.0001
             Tolerance for centroid convergence
         max: int, default = 100
            Maximum iterations for the clustering process
@@ -139,8 +135,8 @@ class K_Means(_Algorithm):
         super(K_Means, self).__init__(*args, **kwargs)
         self.name = "K-Means"
         self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
-        self.k = self.parameters.get('k') or 2
-        self.tolerance = self.parameters.get('tolerance') or 1e-4
+        self.k = self.parameters.get('k') or 79
+        self.tolerance = self.parameters.get('tolerance') or 0.0001
         self.max_iterations = self.parameters.get('max') or 100
 
         threshold = self.parameters.get('threshold') or 95
@@ -247,6 +243,8 @@ class K_Means(_Algorithm):
 
         # Evaluate attack testing samples
         for sample in self.testing_attack_reduced:
+
+            sample_2d = self.plot_pca.transform(sample.reshape(1, -1))[0]
             # Compute distances from centroids
             distances = np.linalg.norm(sample - self.centroids, axis=1)
             nearest = np.min(distances)
@@ -264,11 +262,11 @@ class DBSCAN(_Algorithm):
     DBScan Clustering Algorithm
 
     Optional parameters:
-        e: float, default = 0.0075
+        e: float, default = 0.0146
         Epsilon
-        min: int, default = self.dimensions * 2 + 1
+        min: int, default = 2
             minimum samples required to form a cluster
-            https://medium.com/@tarammullin/dbscan-parameter-estimation-ff8330e3a3bd
+            https://medium.com/@tarammullin/dbscan-parameter-estimation-ff8330e3a3bd - This suggest that high min should work best, for some reason that's not the case
         p: utils.Distance, default = euclidean distance
         distance function to use. Check /clustering/utils.py for info
     '''
@@ -278,8 +276,8 @@ class DBSCAN(_Algorithm):
 
         self.name = "DBScan"
         self.plot.configure('X', 'Y', title=f"{self.name}:{self.parameters}")
-        self.e = self.parameters.get('e') or 0.0075 # Estimated from elbow plot
-        self.min_samples = self.parameters.get('min') or self.dimensions + 2 
+        self.e = self.parameters.get('e') or 0.0146 # Estimated from elbow plot
+        self.min_samples = self.parameters.get('min') or 2
 
         if 'p' in self.parameters:
             p = self.parameters.get('p')
