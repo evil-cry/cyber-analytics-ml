@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 logging.disable(50)
 
 class _Algorithm():
-    def __init__(self, corpus: list, dimensions: int = 2, plot_dimensions:int = 2, parameters = {}) -> None:
+    def __init__(self, corpus: list, dimensions: int = 18, plot_dimensions:int = 2, parameters = {}) -> None:
         self.corpus = deepcopy(corpus) 
         self.dimensions = dimensions
         self.parameters = parameters
@@ -98,7 +98,7 @@ class _Algorithm():
         self.plot.draw(path)
 
     def print_score(self, score):
-        params_str = ",".join(f"{k}={v}" for k, v in self.parameters.items())
+        params_str = ",".join(f"{k}={v:.4f}" for k, v in self.parameters.items())
         return f'{self.name}:{params_str}:{score}\n'
 
 class K_Means(_Algorithm):
@@ -228,6 +228,8 @@ class K_Means(_Algorithm):
 
         # Evaluate attack testing samples
         for sample in self.testing_attack_reduced:
+
+            sample_2d = self.plot_pca.transform(sample.reshape(1, -1))[0]
             # Compute distances from centroids
             distances = np.linalg.norm(sample - self.centroids, axis=1)
             nearest = np.min(distances)
