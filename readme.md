@@ -18,8 +18,7 @@ python3 anomaly_detection/clustering/main.py
 ```
 
 ### Value Search and Graphs
-1. If you need to find a parameter value that works best for a classifier, you are out of luck - the code was refactored and value tester no longer works. _make_graph()_ still works for old testing data.
-2. Once testing is done, [make_graph.py](spam_classification/classifier/make_graph.py) provides a way to plot line graphs based on test results. Disclaimer: the method currently only looks at the first value that it finds to be changing in a subset of the test results. It first looks at Stop Word ‰ Removed. If it changes, it will not look at other parameters! If not, it goes one by one through parameters until it finds the first one that changes.  
+1. If you need to find a parameter value that works best for a clustering algorithm, utilize the other methods in main. 
 
 ## Spam Detector Classification
 This project provides an easy way to implement and test spam detection using classifiers.
