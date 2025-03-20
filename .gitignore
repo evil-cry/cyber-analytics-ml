@@ -177,4 +177,4 @@ cython_debug/
 
 nids_clustering/cache/
 
-malware_classification\corpus\feature_vectors.zip
+malware_classification/corpus/feature_vectors.zip
