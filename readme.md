@@ -1,6 +1,26 @@
 # Machine Learning
 This repository is a collection of various machine learning projects.
 
+## Malware Classification
+This project provides a highly scalable way of implementing and testing malware classification using Support Vector Machines with Stochastic Gradient Descent.
+It additionally realizes One-vs-One and One-vs-All multiclass classifiers. 
+The [report](malware_classification/docs/report.pdf) shows the full process of creating them, as well as various experimentation stages with classifier parameters.
+
+### Setup
+1. Install all the libraries specified in [requirements.txt](malware_classification/docs/requirements.txt)
+2. If needed add the _feature\_vectors.zip_ and _sha256\_family.csv_ data files to 'malware_classification/corpus/'
+3. The script will test a generic SVM and show accuracy. 
+4. To see One-vs-One and One-vs-All model performance and confusion matrices, uncomment the lines accordingly. To find the matrices, navigate to 'malware_classification/graphs'
+4. To run the project ensure you are in the root directory (the directory containing the malware_classification folder) and run the following in the terminal:
+
+```sh
+pip install -r malware_classification/docs/requirements.txt
+python3 malware_classification/classifier/main.py
+```
+
+### Hyperparameter Search
+1. [main.py](malware_classification/classifiers/main.py) contains the grid search that can be used to find optimal hyperparameters.
+
 ## Anomaly Detection using Clustering
 This project provides an easy way to implement and test anomaly detection using clustering algorithms.
 Current iteration implements DBScan and K-Means algorithms.

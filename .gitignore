@@ -1,5 +1,6 @@
 *cache
-*.png
+*.zip
+*.pklrick
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
