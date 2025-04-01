@@ -21,6 +21,107 @@ from sklearn.metrics import classification_report
 # (ensures consistent dataset splitting between runs)
 SEED = 0
 
+class Node:
+    '''
+    Represents a node in a decision tree
+    '''
+
+    def __init__(self, feature=None, threshold=None, left=None, right=None, value=None):
+        self.feature = feature
+        self.threshold = threshold
+        self.left = left
+        self.right = right
+        self.value = value
+
+class DecisionTree:
+    '''
+    Represents a decision tree classifier
+    '''
+
+    def __init__(self, max_depth=None, min_node=2):
+        self.root = None
+        self.max_depth = max_depth
+        self.min_node = min_node
+        self.node_count = 0
+
+    def fit(self, x, y):
+        '''
+        Build the decision tree to the training data
+        '''
+
+        print("\n===== BUILDING DECISION TREE =====")
+        print(f"Data shape: {x.shape}")
+        print(f"Max depth: {self.max_depth}")
+        print(f"Min samples: {self.min_node}")
+        print("================================\n")
+        
+        self.root = self._grow_tree(x, y)
+
+        print("\n===== TREE CONSTRUCTION COMPLETE =====")
+        print(f"Total nodes: {self.node_count}")
+        print("=====================================\n")
+
+    def _grow_tree(self, x, y, depth=0):
+        '''
+        Grow the decision tree recursively
+        '''
+        n_samples, n_features = x.shape
+        n_classes = len(np.unique(y))
+        self.node_count += 1
+        node_id = self.node_count
+
+        indent = "│  " * depth + "├─"
+        print(f"{indent} Node {node_id} (Depth {depth}): {n_samples} samples")
+
+        values, counts = np.unique(y, return_counts=True)
+        most_common_i = np.argmax(counts)
+        most_common = values[most_common_i]
+
+        leaf = Node(value=most_common)
+
+        # 1. Maximum depth reached
+        if self.max_depth is not None and depth >= self.max_depth:
+            print(f"Max depth {self.max_depth} reached")
+            return leaf
+        
+        # 2. Minimum samples not reached
+        if n_samples < self.min_node:
+            print(f"Sample count {n_samples} below min_samples={self.min_node}")
+            return leaf
+        
+        # 3. All samples are of the same class
+        if n_classes == 1:
+            print("Pure node (single class)")
+            return leaf
+        
+        best_gini, (feature, threshold) = split(x, y)
+
+        feature_names = [f"Feature {i}" for i in range(x.shape[1])]
+        feature_name = feature_names[feature]
+
+        print(f"{indent} SPLIT: {feature_name} <= {threshold:.4f} (Gini: {best_gini:.4f})")
+ 
+        # 4. Check if the optimal split results in a group with no samples or
+        # if the optimal split has a worse Gini impurity than the parent node
+        if feature is None or threshold is None:
+            return leaf
+
+        left_mask = x[:, feature] <= threshold
+        right_mask = ~left_mask
+
+        if np.sum(left_mask) == 0 or np.sum(right_mask) == 0:
+            return leaf
+        
+        print(f"{indent} Left branch: {np.sum(left_mask)} samples")
+        print(f"{indent} Right branch: {np.sum(right_mask)} samples")
+
+        return Node(
+            feature = feature, 
+            threshold = threshold,
+            left = self._grow_tree(x[left_mask], y[left_mask], depth + 1),
+            right = self._grow_tree(x[right_mask], y[right_mask], depth + 1)
+        )
+
 
 def parse_args():
     """
@@ -301,10 +402,11 @@ def split(samples: list, labels: list) -> int:
             if gini < best_gini:
                 best_gini = gini
                 b = (i, t)
-                    
-                print(best_gini)
 
-    return b
+    if b is None:
+        return None
+
+    return best_gini, b
 
 def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
     """
@@ -327,19 +429,8 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
     pred : numpy array
            Final predictions on testing dataset.
     """
-    i, threshold = split(X_tr, Y_tr)
-    print(i)
-    print(threshold)
-
-#     model = RandomForestClassifier(n_jobs=-1, n_estimators=1, oob_score=True)
-#     model.fit(X_tr, Y_tr)
-
-#     score = model.score(X_ts, Y_ts)
-#     print("RF accuracy = {}".format(score))
-
-#     pred = model.predict(X_ts)
-#     return pred
-
+    model = DecisionTree(max_depth=10, min_node=2)
+    model.fit(X_tr, Y_tr)
 
 def main(args):
     """
