@@ -1,0 +1,25 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 20,
+    "sleep_time": 10,
+    "dns_interval": 0,
+    "ntp_interval": -1,
+    "ports": {
+        "null": 3,
+        "34164": 1,
+        "5228": 2,
+        "33368": 2,
+        "36791": 1,
+        "51401": 1,
+        "55312": 1,
+        "35082": 1,
+        "49084": 1
+    },
+    "domains": {
+        "settings.crashlytics.com": 2,
+        "a.config.skype.com": 2,
+        "b.config.skype.com": 2
+    },
+    "ciphers": {}
+}

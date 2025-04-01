@@ -222,6 +222,90 @@ def do_stage_0(Xp_tr, Xp_ts, Xd_tr, Xd_ts, Xc_tr, Xc_ts, Y_tr, Y_ts):
     return resp_tr, resp_ts, resd_tr, resd_ts, resc_tr, resc_ts
 
 
+def gini_impurity(left: list, right: list) -> float:
+    '''
+    Calculate the Gini impurity of a set of labels.
+
+    @params
+    - grps: list 
+    - cls: list
+
+    @returns
+    - gini: float
+            The Gini impurity of the set of labels.
+    '''
+     
+    def gini_index(labels: list) -> float:
+        '''
+        Calculate the Gini impurity of a sample
+        '''
+        if len(labels) == 0:
+            return 0
+        
+        _, counts = np.unique(labels, return_counts=True)
+        p = counts / len(labels)
+        
+        gini = 1 - np.sum(p ** 2)
+        return gini
+     
+    n_left = len(left)
+    n_right = len(right)
+    n_total = n_left + n_right
+     
+    if n_total == 0:    
+        return 0
+      
+    gini = (n_left / n_total) * gini_index(left) + \
+            (n_right / n_total) * gini_index(right)
+      
+    return gini
+
+def split(samples: list, labels: list) -> int:
+    '''
+    Split a group of labels into two groups based on the Gini impurity.
+
+    @params
+    - grourps: left and right group of samples
+    - labels: list of classes/labels
+
+    @returns
+    - b: (int, int)
+            Tuple of the best feature index and threshold.
+    '''
+      
+    n_samples, n_features = samples.shape
+      
+    if n_samples == 0:
+        return None, 0
+      
+    best_gini = float("inf")
+
+    for i in range(n_features):
+        f = samples[:, i]
+        u = np.unique(f)
+
+        if len(u) <= 1:
+            continue
+
+        split_t = (u[:-1] + u[1:]) / 2 
+
+        for t in split_t:
+            l_mask = f <= t
+            r_mask = ~l_mask
+
+            left = labels[l_mask]
+            right = labels[r_mask]
+            
+            gini = gini_impurity(left, right)
+            
+            if gini < best_gini:
+                best_gini = gini
+                b = (i, t)
+                    
+                print(best_gini)
+
+    return b
+
 def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
     """
     Perform stage 1 of the classification procedure:
@@ -243,14 +327,18 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
     pred : numpy array
            Final predictions on testing dataset.
     """
-    model = RandomForestClassifier(n_jobs=-1, n_estimators=1, oob_score=True)
-    model.fit(X_tr, Y_tr)
+    i, threshold = split(X_tr, Y_tr)
+    print(i)
+    print(threshold)
 
-    score = model.score(X_ts, Y_ts)
-    print("RF accuracy = {}".format(score))
+#     model = RandomForestClassifier(n_jobs=-1, n_estimators=1, oob_score=True)
+#     model.fit(X_tr, Y_tr)
 
-    pred = model.predict(X_ts)
-    return pred
+#     score = model.score(X_ts, Y_ts)
+#     print("RF accuracy = {}".format(score))
+
+#     pred = model.predict(X_ts)
+#     return pred
 
 
 def main(args):
@@ -259,7 +347,7 @@ def main(args):
     """
     # load dataset
     print("Loading dataset ... ")
-    X, X_p, X_d, X_c, Y = load_data(args.root)
+    X, X_p, X_d, X_c, Y = load_data('iot_classification/corpus/iot_data')
 
     # encode labels
     print("Encoding labels ... ")
@@ -300,7 +388,7 @@ def main(args):
     pred = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts)
 
     # print classification report
-    print(classification_report(Y_ts, pred, target_names=le.classes_))
+    # print(classification_report(Y_ts, pred, target_names=le.classes_))
 
 
 if __name__ == "__main__":

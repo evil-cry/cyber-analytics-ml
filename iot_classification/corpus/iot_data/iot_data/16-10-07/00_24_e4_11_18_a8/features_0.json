@@ -1,0 +1,19 @@
+{
+    "flow_volume": 0,
+    "flow_duration": 50,
+    "flow_rate": 0,
+    "sleep_time": 10,
+    "dns_interval": -20,
+    "ntp_interval": -1,
+    "ports": {
+        "1935": 4,
+        "32901": 1,
+        "80": 2,
+        "40933": 3,
+        "56557": 1
+    },
+    "domains": {
+        "babyws.withings.net": 2
+    },
+    "ciphers": {}
+}

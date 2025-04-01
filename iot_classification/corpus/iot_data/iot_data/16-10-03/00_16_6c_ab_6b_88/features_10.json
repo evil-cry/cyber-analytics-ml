@@ -1,0 +1,32 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 10,
+    "flow_rate": 2400000,
+    "sleep_time": 10,
+    "dns_interval": 20,
+    "ntp_interval": -1,
+    "ports": {
+        "1900": 112,
+        "48868": 8,
+        "5222": 91,
+        "null": 77,
+        "3080": 22,
+        "49152": 50,
+        "51956": 1,
+        "80": 3,
+        "39346": 1,
+        "465": 3,
+        "55143": 1,
+        "43309": 1,
+        "36413": 1,
+        "123": 1,
+        "36794": 1,
+        "53637": 1
+    },
+    "domains": {
+        "www.samsungsmartcam.com": 4,
+        "smtp.gmail.com": 6,
+        "pool.ntp.org": 2
+    },
+    "ciphers": {}
+}

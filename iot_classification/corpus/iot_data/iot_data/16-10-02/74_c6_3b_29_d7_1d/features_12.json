@@ -1,0 +1,18 @@
+{
+    "flow_volume": 400,
+    "flow_duration": 130,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "443": 14,
+        "49171": 10,
+        "49153": 1,
+        "80": 1
+    },
+    "domains": {
+        "api.evrythng.com": 1
+    },
+    "ciphers": {}
+}

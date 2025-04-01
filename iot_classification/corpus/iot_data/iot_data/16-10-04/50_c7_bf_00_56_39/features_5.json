@@ -1,0 +1,19 @@
+{
+    "flow_volume": 600,
+    "flow_duration": 480,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "50443": 4,
+        "54551": 3,
+        "40193": 1,
+        "37859": 1,
+        "123": 1
+    },
+    "domains": {
+        "uk.pool.ntp.org": 2
+    },
+    "ciphers": {}
+}

@@ -1,0 +1,19 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 2000000,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "67": 17,
+        "18389": 5,
+        "25050": 5,
+        "68": 9,
+        "null": 7
+    },
+    "domains": {
+        "netcom.netatmo.net": 11
+    },
+    "ciphers": {}
+}

@@ -1,0 +1,22 @@
+{
+    "flow_volume": 3800,
+    "flow_duration": 10,
+    "flow_rate": 2400000,
+    "sleep_time": 10,
+    "dns_interval": 40,
+    "ntp_interval": -1,
+    "ports": {
+        "null": 105,
+        "3080": 27,
+        "49152": 103,
+        "3478": 13,
+        "49153": 15,
+        "4679": 1,
+        "4680": 1
+    },
+    "domains": {
+        "www.belkin.com": 2,
+        "d3gjecg2uu2eaq.cloudfront.net": 2
+    },
+    "ciphers": {}
+}

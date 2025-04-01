@@ -1,0 +1,38 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "null": 6,
+        "1879": 1,
+        "55176": 1,
+        "42418": 1,
+        "43612": 1,
+        "56634": 1,
+        "37380": 1,
+        "46924": 1,
+        "37026": 1,
+        "5228": 2,
+        "55160": 1,
+        "50021": 1,
+        "46881": 1,
+        "41369": 1,
+        "40974": 1,
+        "61557": 1,
+        "61450": 1,
+        "42423": 1,
+        "46585": 1,
+        "45395": 1
+    },
+    "domains": {
+        "mobile.pipe.aria.microsoft.com": 7,
+        "a.config.skype.com": 4,
+        "b.config.skype.com": 4,
+        "app.chat.xiaomi.net": 1,
+        "resolver.msg.xiaomi.net": 2
+    },
+    "ciphers": {}
+}

@@ -1,0 +1,19 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 2700000,
+    "sleep_time": 10,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "4747": 1,
+        "null": 1,
+        "5228": 2,
+        "34110": 1,
+        "67": 1
+    },
+    "domains": {
+        "resolver.msg.xiaomi.net": 1
+    },
+    "ciphers": {}
+}

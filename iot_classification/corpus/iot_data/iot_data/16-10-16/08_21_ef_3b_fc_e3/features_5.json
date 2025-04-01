@@ -1,0 +1,18 @@
+{
+    "flow_volume": 400,
+    "flow_duration": 0,
+    "flow_rate": -89670,
+    "sleep_time": 1330,
+    "dns_interval": 1330,
+    "ntp_interval": -1,
+    "ports": {
+        "25953": 1,
+        "33759": 1,
+        "5228": 1
+    },
+    "domains": {
+        "app.chat.xiaomi.net": 1,
+        "resolver.msg.xiaomi.net": 1
+    },
+    "ciphers": {}
+}

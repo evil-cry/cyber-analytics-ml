@@ -1,0 +1,23 @@
+{
+    "flow_volume": 400,
+    "flow_duration": 130,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "443": 14,
+        "49191": 3,
+        "49153": 1,
+        "80": 1,
+        "67": 1,
+        "49195": 7
+    },
+    "domains": {
+        "mqtt.evrythng.com": 1,
+        "api.evrythng.com": 1
+    },
+    "ciphers": {
+        "[\"006b\", \"0067\", \"0039\", \"0033\", \"003d\", \"003c\", \"0035\", \"002f\"]": 1
+    }
+}

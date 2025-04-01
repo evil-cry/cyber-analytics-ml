@@ -1,0 +1,30 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 640,
+    "ntp_interval": -1,
+    "ports": {
+        "7754": 1,
+        "5228": 7,
+        "null": 5,
+        "56656": 4,
+        "9408": 1,
+        "10145": 1,
+        "8563": 1,
+        "13717": 1,
+        "80": 2,
+        "23064": 1,
+        "40282": 1
+    },
+    "domains": {
+        "mtalk.google.com": 2,
+        "settings.crashlytics.com": 2,
+        "api.netatmo.net": 1,
+        "connectivitycheck.gstatic.com": 1
+    },
+    "ciphers": {
+        "[\"cca9\", \"cc14\", \"c02b\", \"c02c\", \"cca8\", \"cc13\", \"c02f\", \"c030\", \"009e\", \"009f\", \"c009\", \"c00a\", \"c013\", \"c014\", \"0033\", \"0039\", \"009c\", \"009d\", \"002f\", \"0035\"]": 2
+    }
+}

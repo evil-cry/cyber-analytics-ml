@@ -1,0 +1,29 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 70,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": 10,
+    "ports": {
+        "443": 37,
+        "2185": 14,
+        "6545": 1,
+        "123": 6,
+        "6547": 1,
+        "6548": 1,
+        "6550": 1,
+        "6551": 1,
+        "2187": 10,
+        "6553": 1,
+        "6555": 1,
+        "6557": 1
+    },
+    "domains": {
+        "pool.ntp.org": 6,
+        "dc-na02-useast1.connect.smartthings.com": 2
+    },
+    "ciphers": {
+        "[\"0033\"]": 2
+    }
+}

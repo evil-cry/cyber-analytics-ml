@@ -1,0 +1,18 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 10,
+    "flow_rate": 20,
+    "sleep_time": 10,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "1900": 113,
+        "48868": 4,
+        "null": 73,
+        "5222": 64,
+        "3080": 23,
+        "49152": 48
+    },
+    "domains": {},
+    "ciphers": {}
+}

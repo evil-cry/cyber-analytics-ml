@@ -1,0 +1,22 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "52029": 1,
+        "9974": 1,
+        "null": 3,
+        "24651": 2,
+        "5228": 1,
+        "2177": 1,
+        "6962": 1
+    },
+    "domains": {
+        "imap.gmail.com": 1,
+        "b.config.skype.com": 4
+    },
+    "ciphers": {}
+}

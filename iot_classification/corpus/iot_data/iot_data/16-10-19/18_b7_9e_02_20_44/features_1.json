@@ -1,0 +1,19 @@
+{
+    "flow_volume": 0,
+    "flow_duration": 10,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "41366": 1,
+        "36531": 15,
+        "8090": 12,
+        "5228": 9,
+        "43761": 7
+    },
+    "domains": {
+        "sip.invoxia.com": 7
+    },
+    "ciphers": {}
+}

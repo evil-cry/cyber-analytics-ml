@@ -1,0 +1,19 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 2400000,
+    "sleep_time": 10,
+    "dns_interval": 30,
+    "ntp_interval": -1,
+    "ports": {
+        "5222": 29,
+        "null": 190,
+        "54370": 1,
+        "63149": 1,
+        "80": 2
+    },
+    "domains": {
+        "h10141.www1.hp.com": 2
+    },
+    "ciphers": {}
+}

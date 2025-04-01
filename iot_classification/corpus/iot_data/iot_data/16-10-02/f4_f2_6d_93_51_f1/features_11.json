@@ -1,0 +1,26 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 0,
+    "dns_interval": 0,
+    "ntp_interval": -1,
+    "ports": {
+        "50443": 19,
+        "3478": 12,
+        "31156": 2,
+        "null": 27,
+        "8089": 4,
+        "48669": 1,
+        "80": 4,
+        "56898": 4,
+        "57077": 1,
+        "19974": 2,
+        "37579": 1,
+        "41337": 1
+    },
+    "domains": {
+        "aps1-relay.tplinkcloud.com": 4
+    },
+    "ciphers": {}
+}

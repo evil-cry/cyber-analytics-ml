@@ -1,0 +1,22 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "52931": 1,
+        "5228": 3,
+        "59084": 1,
+        "null": 2,
+        "52610": 1,
+        "55077": 1,
+        "57517": 1
+    },
+    "domains": {
+        "LB-IM-07-826586616.ap-southeast-1.elb.amazonaws.com": 2,
+        "b.config.skype.com": 2
+    },
+    "ciphers": {}
+}

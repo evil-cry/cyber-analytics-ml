@@ -1,0 +1,25 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 3600000,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "53": 3,
+        "5228": 3,
+        "null": 2,
+        "4029": 1,
+        "11700": 1,
+        "23840": 1,
+        "21272": 1,
+        "2830": 1,
+        "22426": 1,
+        "42780": 1
+    },
+    "domains": {
+        "a.config.skype.com": 5,
+        "b.config.skype.com": 4
+    },
+    "ciphers": {}
+}

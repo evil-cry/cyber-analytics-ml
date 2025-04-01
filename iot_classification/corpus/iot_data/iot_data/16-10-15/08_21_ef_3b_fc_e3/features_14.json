@@ -1,0 +1,26 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": -1120,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "5228": 3,
+        "31914": 1,
+        "14374": 1,
+        "2144": 1,
+        "17850": 1,
+        "9989": 1,
+        "20928": 1,
+        "25331": 1,
+        "2332": 1
+    },
+    "domains": {
+        "app.chat.xiaomi.net": 1,
+        "a.config.skype.com": 4,
+        "b.config.skype.com": 2,
+        "resolver.msg.xiaomi.net": 1
+    },
+    "ciphers": {}
+}

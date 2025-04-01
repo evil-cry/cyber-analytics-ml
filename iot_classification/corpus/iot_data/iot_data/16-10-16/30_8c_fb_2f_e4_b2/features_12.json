@@ -1,0 +1,17 @@
+{
+    "flow_volume": 2900,
+    "flow_duration": 40,
+    "flow_rate": 90,
+    "sleep_time": 10,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "38572": 57,
+        "443": 50,
+        "67": 1,
+        "2048": 1,
+        "0": 1
+    },
+    "domains": {},
+    "ciphers": {}
+}
