@@ -94,7 +94,10 @@ class DecisionTree:
             print("Pure node (single class)")
             return leaf
         
-        best_gini, (feature, threshold) = split(x, y)
+        split_result = split(x, y)
+        if split_result[0] is None:
+            return leaf  # Return a leaf if no valid split is found
+        best_gini, (feature, threshold) = split_result
 
         feature_names = [f"Feature {i}" for i in range(x.shape[1])]
         feature_name = feature_names[feature]
@@ -380,6 +383,7 @@ def split(samples: list, labels: list) -> int:
         return None, 0
       
     best_gini = float("inf")
+    b = None
 
     for i in range(n_features):
         f = samples[:, i]
@@ -404,7 +408,7 @@ def split(samples: list, labels: list) -> int:
                 b = (i, t)
 
     if b is None:
-        return None
+        return None, None
 
     return best_gini, b
 
@@ -427,7 +431,7 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
     """
     # Hyperparameters
     n_trees = 10          # Total number of decision trees in the forest 
-    per_data = 0.8        # Use 80% of the training data
+    per_data = 0.7        # Use 70% of the training data
     feature_subcount = 3  # Number of features to sample for each tree
 
     n_samples, n_features = X_tr.shape
@@ -457,13 +461,25 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
     votes = np.zeros((n_test, n_trees), dtype=int)
     
     for i, (tree, feat_idx) in enumerate(forest):
-           
         # Restrict test data to the feature subset for only this tree
         X_test_sub = X_ts[:, feat_idx]
         
-        # Get predictions from the tree for all test samples
-        tree_preds = np.array([tree._predict_sample(x, tree.root) for x in X_test_sub])
-        votes[:, i] = tree_preds
+        tree_preds = []
+        for x in X_test_sub:
+            # Start at the root node
+            node = tree.root
+            
+            while node.left is not None or node.right is not None:
+                
+                if node.feature is None or node.threshold is None:
+                    break
+                if x[node.feature] <= node.threshold:
+                    node = node.left
+                else:
+                    node = node.right
+            tree_preds.append(node.value)
+        
+    votes[:, i] = np.array(tree_preds)
 
     # Majority vote 
     final_preds = []
@@ -526,7 +542,7 @@ def main(args):
     pred = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts)
 
     # print classification report
-    # print(classification_report(Y_ts, pred, target_names=le.classes_))
+    print(classification_report(Y_ts, pred, target_names=le.classes_))
 
 
 if __name__ == "__main__":
