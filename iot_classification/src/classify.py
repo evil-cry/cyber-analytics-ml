@@ -94,7 +94,10 @@ class DecisionTree:
             print("Pure node (single class)")
             return leaf
         
-        best_gini, (feature, threshold) = split(x, y)
+        split_result = split(x, y)
+        if split_result[0] is None:
+            return leaf  # Return a leaf if no valid split is found
+        best_gini, (feature, threshold) = split_result
 
         feature_names = [f"Feature {i}" for i in range(x.shape[1])]
         feature_name = feature_names[feature]
@@ -380,6 +383,7 @@ def split(samples: list, labels: list) -> int:
         return None, 0
       
     best_gini = float("inf")
+    b = None
 
     for i in range(n_features):
         f = samples[:, i]
@@ -404,33 +408,92 @@ def split(samples: list, labels: list) -> int:
                 b = (i, t)
 
     if b is None:
-        return None
+        return None, None
 
     return best_gini, b
 
 def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
     """
-    Perform stage 1 of the classification procedure:
-        train a random forest classifier using the NB prediction probabilities
-
-    Parameters
-    ----------
-    X_tr : numpy array
-           Array containing training samples.
-    Y_tr : numpy array
-           Array containing training labels.
-    X_ts : numpy array
-           Array containing testing samples.
-    Y_ts : numpy array
-           Array containing testing labels
-
+    Random Forest Classifier
+    @params
+    - X_tr : numpy array
+             Array containing training samples.
+    - Y_tr : numpy array
+             Array containing training labels.
+    - X_ts : numpy array
+             Array containing testing samples.
+    - Y_ts : numpy array
+             Array containing testing labels
     Returns
     -------
-    pred : numpy array
-           Final predictions on testing dataset.
+    final_preds : numpy array
+                  Final predictions on testing dataset.
     """
-    model = DecisionTree(max_depth=10, min_node=2)
-    model.fit(X_tr, Y_tr)
+    # Hyperparameters
+    n_trees = 10          # Total number of decision trees in the forest 
+    per_data = 0.7        # Use 70% of the training data
+    feature_subcount = 3  # Number of features to sample for each tree
+
+    n_samples, n_features = X_tr.shape
+    forest = []  # List to hold tuples - (tree, feature_indices)
+
+    # Create each tree in the forest
+    for i in range(n_trees):
+        
+        # Calculate the number of samples in the current tree, then randomly select training data
+        sample_size = int(per_data * n_samples)
+        sample_indices = np.random.choice(n_samples, size=sample_size, replace=True)
+        X_sample = X_tr[sample_indices, :]
+        Y_sample = Y_tr[sample_indices]
+
+        # Randomly sample feature indices to use for this tree
+        feature_indices = np.random.choice(n_features, size=feature_subcount, replace=True)
+        X_sample_sub = X_sample[:, feature_indices]
+
+       # Build the Tree and train it
+        print(f"\nBuilding tree {i+1}/{n_trees} using {sample_size} samples and feature subset {feature_indices}")
+        tree = DecisionTree(max_depth=10, min_node=2)
+        tree.fit(X_sample_sub, Y_sample)
+        forest.append((tree, feature_indices))
+
+    # Prediction:
+    n_test = X_ts.shape[0]
+    votes = np.zeros((n_test, n_trees), dtype=int)
+    
+    for i, (tree, feat_idx) in enumerate(forest):
+        # Restrict test data to the feature subset for only this tree
+        X_test_sub = X_ts[:, feat_idx]
+        
+        tree_preds = []
+        for x in X_test_sub:
+            # Start at the root node
+            node = tree.root
+            
+            while node.left is not None or node.right is not None:
+                
+                if node.feature is None or node.threshold is None:
+                    break
+                if x[node.feature] <= node.threshold:
+                    node = node.left
+                else:
+                    node = node.right
+            tree_preds.append(node.value)
+        
+    votes[:, i] = np.array(tree_preds)
+
+    # Majority vote 
+    final_preds = []
+    
+    # For each test sample, get the vote
+    for i in range(n_test):
+        sample_votes = votes[i, :]
+        final_pred = np.bincount(sample_votes).argmax()
+        final_preds.append(final_pred)
+
+    # Final predictions
+    final_preds = np.array(final_preds)
+
+    return final_preds
 
 def main(args):
     """
