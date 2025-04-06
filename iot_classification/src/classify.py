@@ -137,7 +137,7 @@ def parse_args():
             parser.error("That directory {} does not exist!".format(x))
         else:
             return x
-    parser.add_argument('-r', '--root', type=lambda x: check_path(parser, x), 
+    parser.add_argument('-r', '--root', type=lambda x: check_path(parser, x), default='./corpus/iot_data',
                         help='The path to the root directory containing feature files.')
     parser.add_argument('-s', '--split', type=float, default=0.7, 
                         help='The percentage of samples to use for training.')
@@ -501,7 +501,7 @@ def main(args):
     """
     # load dataset
     print("Loading dataset ... ")
-    X, X_p, X_d, X_c, Y = load_data('iot_classification/corpus/iot_data')
+    X, X_p, X_d, X_c, Y = load_data('corpus/iot_data')
 
     # encode labels
     print("Encoding labels ... ")
