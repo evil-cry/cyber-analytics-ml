@@ -1,0 +1,23 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 40,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": 10,
+    "ports": {
+        "7084": 1,
+        "123": 6,
+        "443": 32,
+        "2366": 32,
+        "7086": 1,
+        "7088": 1,
+        "7090": 1,
+        "7092": 1,
+        "7094": 1
+    },
+    "domains": {
+        "pool.ntp.org": 6
+    },
+    "ciphers": {}
+}

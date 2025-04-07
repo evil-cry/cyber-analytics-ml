@@ -1,0 +1,28 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 3100000,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "40135": 1,
+        "5228": 2,
+        "443": 3,
+        "null": 2,
+        "53": 2,
+        "53945": 1,
+        "1442": 1,
+        "53512": 1,
+        "34177": 1
+    },
+    "domains": {
+        "mtalk.google.com": 1,
+        "imap.gmail.com": 2,
+        "settings.crashlytics.com": 1,
+        "b.config.skype.com": 2
+    },
+    "ciphers": {
+        "[\"cca9\", \"cc14\", \"c02b\", \"c02c\", \"cca8\", \"cc13\", \"c02f\", \"c030\", \"009e\", \"009f\", \"c009\", \"c00a\", \"c013\", \"c014\", \"0033\", \"0039\", \"009c\", \"009d\", \"002f\", \"0035\"]": 1
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 10,
+    "flow_rate": 160,
+    "sleep_time": 0,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "67": 2,
+        "68": 1,
+        "54850": 1,
+        "11095": 4,
+        "null": 3
+    },
+    "domains": {
+        "frontdoor.nest.com": 1,
+        "transport04.rts23.iad01.production.nest.com": 1,
+        "log-rts23-iad01.devices.nest.com": 1
+    },
+    "ciphers": {}
+}

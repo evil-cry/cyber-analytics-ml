@@ -1,0 +1,17 @@
+{
+    "flow_volume": 200,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "44664": 2,
+        "64526": 1,
+        "null": 1
+    },
+    "domains": {
+        "settings.crashlytics.com": 1
+    },
+    "ciphers": {}
+}

@@ -1,0 +1,32 @@
+{
+    "flow_volume": 2900,
+    "flow_duration": 40,
+    "flow_rate": 90,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": 10,
+    "ports": {
+        "38035": 4,
+        "67": 1,
+        "68": 1,
+        "34260": 1,
+        "123": 6,
+        "45354": 1,
+        "443": 7,
+        "80": 4,
+        "41946": 1,
+        "47692": 1,
+        "38910": 1,
+        "60636": 1,
+        "36679": 1,
+        "38572": 99
+    },
+    "domains": {
+        "pool.ntp.org": 4,
+        "nexus.dropcam.com": 2,
+        "oculus689-vir.dropcam.com": 3
+    },
+    "ciphers": {
+        "[\"c013\", \"c014\", \"00ff\"]": 4
+    }
+}

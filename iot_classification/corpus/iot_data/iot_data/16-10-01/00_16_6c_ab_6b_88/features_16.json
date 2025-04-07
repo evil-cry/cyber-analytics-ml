@@ -1,0 +1,24 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 10,
+    "flow_rate": 2400000,
+    "sleep_time": 10,
+    "dns_interval": 30,
+    "ntp_interval": 30,
+    "ports": {
+        "5222": 103,
+        "1900": 103,
+        "null": 68,
+        "3080": 25,
+        "49152": 59,
+        "48868": 4,
+        "58137": 1,
+        "123": 2,
+        "35956": 1
+    },
+    "domains": {
+        "pool.ntp.org": 2,
+        "asia.pool.ntp.org": 2
+    },
+    "ciphers": {}
+}

@@ -1,0 +1,26 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "40170": 3,
+        "null": 4,
+        "41523": 1,
+        "49509": 1,
+        "39792": 1,
+        "37469": 1,
+        "45303": 1,
+        "39898": 1,
+        "40786": 1
+    },
+    "domains": {
+        "settings.crashlytics.com": 2,
+        "resolver.msg.xiaomi.net": 1,
+        "b.config.skype.com": 2,
+        "a.config.skype.com": 2
+    },
+    "ciphers": {}
+}

@@ -1,0 +1,24 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 10,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -120,
+    "ports": {
+        "44011": 8,
+        "8090": 11,
+        "5228": 16,
+        "43761": 7,
+        "33735": 5,
+        "53554": 1,
+        "123": 4,
+        "41333": 1,
+        "null": 2
+    },
+    "domains": {
+        "sip.invoxia.com": 7,
+        "3.invoxia.pool.ntp.org": 1
+    },
+    "ciphers": {}
+}

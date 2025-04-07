@@ -1,0 +1,35 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 0,
+    "flow_rate": 0,
+    "sleep_time": 10,
+    "dns_interval": 0,
+    "ntp_interval": -1,
+    "ports": {
+        "40971": 1,
+        "null": 4,
+        "67": 1,
+        "68": 1,
+        "7275": 1,
+        "3351": 1,
+        "28651": 1,
+        "80": 1,
+        "22117": 1,
+        "5228": 2,
+        "8329": 1,
+        "57561": 1,
+        "24187": 1,
+        "26302": 1,
+        "32372": 1
+    },
+    "domains": {
+        "connectivitycheck.gstatic.com": 2,
+        "mtalk.google.com": 1,
+        "BCMLS2.glpals.com": 1,
+        "mobile.pipe.aria.microsoft.com": 2,
+        "a.config.skype.com": 2
+    },
+    "ciphers": {
+        "[\"cca9\", \"cc14\", \"c02b\", \"c02c\", \"cca8\", \"cc13\", \"c02f\", \"c030\", \"009e\", \"009f\", \"c009\", \"c00a\", \"c013\", \"c014\", \"0033\", \"0039\", \"009c\", \"009d\", \"002f\", \"0035\"]": 1
+    }
+}

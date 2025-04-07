@@ -1,0 +1,22 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 10,
+    "flow_rate": 800000,
+    "sleep_time": 10,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "null": 114,
+        "5222": 69,
+        "1900": 110,
+        "3080": 23,
+        "49152": 42,
+        "42284": 3,
+        "53897": 1,
+        "123": 1
+    },
+    "domains": {
+        "pool.ntp.org": 4
+    },
+    "ciphers": {}
+}

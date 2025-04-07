@@ -1,0 +1,39 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 0,
+    "flow_rate": 0,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "5228": 3,
+        "55815": 1,
+        "80": 3,
+        "null": 5,
+        "67": 1,
+        "68": 1,
+        "50729": 1,
+        "35355": 1,
+        "7275": 1,
+        "37554": 1,
+        "44174": 1,
+        "35015": 1,
+        "44088": 1,
+        "38065": 1,
+        "47525": 1,
+        "42440": 1,
+        "45466": 1,
+        "52167": 1
+    },
+    "domains": {
+        "connectivitycheck.gstatic.com": 3,
+        "BCMLS2.glpals.com": 1,
+        "mtalk.google.com": 1,
+        "service.game-mode.net": 1,
+        "mobile.pipe.aria.microsoft.com": 2,
+        "b.config.skype.com": 2
+    },
+    "ciphers": {
+        "[\"cca9\", \"cc14\", \"c02b\", \"c02c\", \"cca8\", \"cc13\", \"c02f\", \"c030\", \"009e\", \"009f\", \"c009\", \"c00a\", \"c013\", \"c014\", \"0033\", \"0039\", \"009c\", \"009d\", \"002f\", \"0035\"]": 1
+    }
+}

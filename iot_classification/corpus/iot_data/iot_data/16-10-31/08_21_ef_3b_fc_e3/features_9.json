@@ -1,0 +1,30 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "5228": 2,
+        "41505": 1,
+        "80": 2,
+        "null": 4,
+        "64229": 1,
+        "64522": 1,
+        "43508": 1,
+        "54448": 1,
+        "49091": 1,
+        "63083": 1
+    },
+    "domains": {
+        "connectivitycheck.gstatic.com": 1,
+        "mtalk.google.com": 1,
+        "app.chat.xiaomi.net": 1,
+        "b.config.skype.com": 2,
+        "mobile.pipe.aria.microsoft.com": 2
+    },
+    "ciphers": {
+        "[\"cca9\", \"cc14\", \"c02b\", \"c02c\", \"cca8\", \"cc13\", \"c02f\", \"c030\", \"009e\", \"009f\", \"c009\", \"c00a\", \"c013\", \"c014\", \"0033\", \"0039\", \"009c\", \"009d\", \"002f\", \"0035\"]": 1
+    }
+}

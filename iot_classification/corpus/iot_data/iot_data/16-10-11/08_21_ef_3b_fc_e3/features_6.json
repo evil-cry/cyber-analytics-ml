@@ -1,0 +1,31 @@
+{
+    "flow_volume": 300,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "41014": 1,
+        "52421": 1,
+        "null": 5,
+        "5228": 2,
+        "40774": 1,
+        "56911": 1,
+        "42370": 1,
+        "43863": 1,
+        "52152": 1,
+        "54805": 1,
+        "52966": 1,
+        "53": 2,
+        "48319": 1,
+        "48121": 1
+    },
+    "domains": {
+        "b.config.skype.com": 7,
+        "a.config.skype.com": 4,
+        "resolver.msg.xiaomi.net": 1,
+        "connectivitycheck.gstatic.com": 1
+    },
+    "ciphers": {}
+}

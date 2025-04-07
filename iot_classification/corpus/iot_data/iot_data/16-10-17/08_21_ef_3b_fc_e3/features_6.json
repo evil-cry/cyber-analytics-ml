@@ -1,0 +1,23 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 2700000,
+    "sleep_time": 10,
+    "dns_interval": 550,
+    "ntp_interval": -1,
+    "ports": {
+        "5228": 6,
+        "44024": 1,
+        "80": 2,
+        "null": 3,
+        "50473": 1,
+        "54481": 1
+    },
+    "domains": {
+        "connectivitycheck.gstatic.com": 1,
+        "mtalk.google.com": 1
+    },
+    "ciphers": {
+        "[\"cca9\", \"cc14\", \"c02b\", \"c02c\", \"cca8\", \"cc13\", \"c02f\", \"c030\", \"009e\", \"009f\", \"c009\", \"c00a\", \"c013\", \"c014\", \"0033\", \"0039\", \"009c\", \"009d\", \"002f\", \"0035\"]": 1
+    }
+}

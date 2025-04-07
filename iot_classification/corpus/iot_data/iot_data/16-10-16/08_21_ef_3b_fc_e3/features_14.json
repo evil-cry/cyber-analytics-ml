@@ -1,0 +1,19 @@
+{
+    "flow_volume": 200,
+    "flow_duration": 0,
+    "flow_rate": 10,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "63553": 1,
+        "null": 2,
+        "5228": 1,
+        "58438": 1
+    },
+    "domains": {
+        "LB-IM-12-2017274345.ap-southeast-1.elb.amazonaws.com": 1,
+        "app.chat.xiaomi.net": 1
+    },
+    "ciphers": {}
+}

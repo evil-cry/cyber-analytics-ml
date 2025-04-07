@@ -1,0 +1,24 @@
+{
+    "flow_volume": 900,
+    "flow_duration": 60,
+    "flow_rate": 20,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "5222": 35,
+        "40179": 19,
+        "49491": 1,
+        "80": 7,
+        "40365": 1,
+        "47491": 1,
+        "34595": 1,
+        "43165": 1,
+        "41086": 1,
+        "46645": 1
+    },
+    "domains": {
+        "scalews.withings.net": 7
+    },
+    "ciphers": {}
+}

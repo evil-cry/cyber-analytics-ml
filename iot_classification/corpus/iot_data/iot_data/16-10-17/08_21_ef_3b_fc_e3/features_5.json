@@ -1,0 +1,15 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 3100000,
+    "sleep_time": -30,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "443": 4,
+        "34921": 1,
+        "5228": 3
+    },
+    "domains": {},
+    "ciphers": {}
+}

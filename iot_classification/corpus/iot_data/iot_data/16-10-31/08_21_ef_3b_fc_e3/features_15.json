@@ -1,0 +1,30 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 0,
+    "flow_rate": 3600000,
+    "sleep_time": 10,
+    "dns_interval": 10,
+    "ntp_interval": -1,
+    "ports": {
+        "32593": 1,
+        "2927": 1,
+        "null": 4,
+        "5228": 3,
+        "23424": 1,
+        "53": 5,
+        "13353": 1,
+        "13491": 1,
+        "3681": 1,
+        "27846": 1,
+        "13395": 1,
+        "28942": 1,
+        "9056": 1
+    },
+    "domains": {
+        "mobile.pipe.aria.microsoft.com": 6,
+        "resolver.gslb.mi-idc.com": 1,
+        "a.config.skype.com": 5,
+        "b.config.skype.com": 3
+    },
+    "ciphers": {}
+}

@@ -1,0 +1,18 @@
+{
+    "flow_volume": 100,
+    "flow_duration": 10,
+    "flow_rate": 10,
+    "sleep_time": 0,
+    "dns_interval": -1,
+    "ntp_interval": -1,
+    "ports": {
+        "null": 2,
+        "33169": 1,
+        "5228": 3,
+        "28867": 1
+    },
+    "domains": {
+        "imap.gmail.com": 1
+    },
+    "ciphers": {}
+}
