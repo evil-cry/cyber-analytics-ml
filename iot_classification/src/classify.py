@@ -38,11 +38,12 @@ class DecisionTree:
     Represents a decision tree classifier
     '''
 
-    def __init__(self, max_depth=None, min_node=2):
+    def __init__(self, max_depth=None, min_node=2, feature_count=None):
         self.root = None
         self.max_depth = max_depth
         self.min_node = min_node
         self.node_count = 0
+        self.feature_count = feature_count
 
     def fit(self, x, y):
         '''
@@ -94,8 +95,8 @@ class DecisionTree:
             print("Pure node (single class)")
             return leaf
         
-        best_gini, (feature, threshold) = split(x, y)
-        parent_gini = gini_index(y)
+        best_gini, (feature, threshold) = self.split(x, y)
+        parent_gini = self.gini_index(y)
 
         if best_gini is None:
             print(f"{indent} Unable to find a valid split")
@@ -162,6 +163,100 @@ class DecisionTree:
             return self.predict_single(node.left, sample)
         else:
             return self.predict_single(node.right, sample)
+        
+    def gini_index(self, labels: list) -> float:
+        '''
+        Calculate the Gini impurity of a sample
+        '''
+        if len(labels) == 0:
+            return 0
+        
+        _, counts = np.unique(labels, return_counts=True)
+        p = counts / len(labels)
+        
+        gini = 1 - np.sum(p ** 2)
+        return gini
+
+    def gini_impurity(self, left: list, right: list) -> float:
+        '''
+        Calculate the Gini impurity of a set of labels.
+
+        @params
+        - grps: list 
+        - cls: list
+
+        @returns
+        - gini: float
+                The Gini impurity of the set of labels.
+        '''
+        
+        n_left = len(left)
+        n_right = len(right)
+        n_total = n_left + n_right
+        
+        if n_total == 0:    
+            return 0
+        
+        gini = (n_left / n_total) * self.gini_index(left) + \
+                (n_right / n_total) * self.gini_index(right)
+        
+        return gini
+
+    def split(self, samples: list, labels: list) -> int:
+        '''
+        Split a group of labels into two groups based on the Gini impurity.
+
+        @params
+        - grourps: left and right group of samples
+        - labels: list of classes/labels
+        - feature_count: number of features to select randomly
+
+        @returns
+        - b: (int, int)
+                Tuple of the best feature index and threshold.
+        '''
+        
+        n_samples, n_features = samples.shape
+        
+        if n_samples == 0:
+            return None, (0, 0)
+        
+        # start best gini as infinity, since best gini is the lowest
+        best_gini = float("inf")
+        index_plus_threshold = None
+
+        # randomly select features
+        if self.feature_count and self.feature_count < n_features:
+            feature_indices = np.random.choice(n_features, size=self.feature_count, replace=True)
+        else:
+            feature_indices = np.arange(n_features)
+
+        for index in feature_indices:
+            feature = samples[:, index]
+            unique = np.unique(feature)
+
+            if len(unique) <= 1:
+                continue
+
+            split_t = (unique[:-1] + unique[1:]) / 2 
+
+            for threshold in split_t:
+                l_mask = feature <= threshold
+                r_mask = ~l_mask
+
+                left = labels[l_mask]
+                right = labels[r_mask]
+                
+                gini = self.gini_impurity(left, right)
+                
+                if gini < best_gini:
+                    best_gini = gini
+                    index_plus_threshold = index, threshold
+
+        if index_plus_threshold is None:
+            return None, (0, 0)
+
+        return best_gini, index_plus_threshold
 
 
 def parse_args():
@@ -363,119 +458,76 @@ def do_stage_0(Xp_tr, Xp_ts, Xd_tr, Xd_ts, Xc_tr, Xc_ts, Y_tr, Y_ts):
 
     return resp_tr, resp_ts, resd_tr, resd_ts, resc_tr, resc_ts
 
-def gini_index(labels: list) -> float:
-    '''
-    Calculate the Gini impurity of a sample
-    '''
-    if len(labels) == 0:
-        return 0
-    
-    _, counts = np.unique(labels, return_counts=True)
-    p = counts / len(labels)
-    
-    gini = 1 - np.sum(p ** 2)
-    return gini
-
-def gini_impurity(left: list, right: list) -> float:
-    '''
-    Calculate the Gini impurity of a set of labels.
-
-    @params
-    - grps: list 
-    - cls: list
-
-    @returns
-    - gini: float
-            The Gini impurity of the set of labels.
-    '''
-     
-    n_left = len(left)
-    n_right = len(right)
-    n_total = n_left + n_right
-     
-    if n_total == 0:    
-        return 0
-      
-    gini = (n_left / n_total) * gini_index(left) + \
-            (n_right / n_total) * gini_index(right)
-      
-    return gini
-
-def split(samples: list, labels: list) -> int:
-    '''
-    Split a group of labels into two groups based on the Gini impurity.
-
-    @params
-    - grourps: left and right group of samples
-    - labels: list of classes/labels
-
-    @returns
-    - b: (int, int)
-            Tuple of the best feature index and threshold.
-    '''
-      
-    n_samples, n_features = samples.shape
-      
-    if n_samples == 0:
-        return None, (0, 0)
-    
-    # start best gini as infinity, since best gini is the lowest
-    best_gini = float("inf")
-    index_plus_threshold = None
-
-    for index in range(n_features):
-        feature = samples[:, index]
-        unique = np.unique(feature)
-
-        if len(unique) <= 1:
-            continue
-
-        split_t = (unique[:-1] + unique[1:]) / 2 
-
-        for threshold in split_t:
-            l_mask = feature <= threshold
-            r_mask = ~l_mask
-
-            left = labels[l_mask]
-            right = labels[r_mask]
-            
-            gini = gini_impurity(left, right)
-            
-            if gini < best_gini:
-                best_gini = gini
-                index_plus_threshold = index, threshold
-
-    if index_plus_threshold is None:
-        return None, (0, 0)
-
-    return best_gini, index_plus_threshold
-
-def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
+def do_stage_1(X_tr, X_ts, Y_tr, Y_ts, **kwargs):
     """
-    Perform stage 1 of the classification procedure:
-        train a random forest classifier using the NB prediction probabilities
-
-    Parameters
-    ----------
-    X_tr : numpy array
-           Array containing training samples.
-    Y_tr : numpy array
-           Array containing training labels.
-    X_ts : numpy array
-           Array containing testing samples.
-    Y_ts : numpy array
-           Array containing testing labels
-
+    Random Forest Classifier
+    @params
+    - X_tr : numpy array
+             Array containing training samples.
+    - Y_tr : numpy array
+             Array containing training labels.
+    - X_ts : numpy array
+             Array containing testing samples.
+    - Y_ts : numpy array
+             Array containing testing labels
     Returns
     -------
-    pred : numpy array
-           Final predictions on testing dataset.
+    final_preds : numpy array
+                  Final predictions on testing dataset.
     """
-    model = DecisionTree(max_depth=10, min_node=2)
-    model.fit(X_tr, Y_tr)
+    # Tree Hyperparameters
+    max_depth = kwargs.get('max_depth', 10)             # maximum depth of the tree
+    min_node = kwargs.get('min_node', 2)                # minimum number of samples in a node
+    feature_count = kwargs.get('feature_count', None)   # number of features to sample for each tree
 
-    prediction = model.predict(X_ts)
-    return prediction
+    # Forest Hyperparameters
+    n_trees = kwargs.get('n_trees', 10)             # number of decision trees in the forest 
+    per_data = kwargs.get('per_data', 0.7)          # percentage of data to use for training
+
+    n_samples, n_features = X_tr.shape
+    forest = []  # List to hold tuples - (tree, feature_indices)
+
+    # Create each tree in the forest
+    for i in range(n_trees):
+        
+        # Calculate the number of samples in the current tree, then randomly select training data with replacement
+        sample_size = int(per_data * n_samples)
+        sample_indices = np.random.choice(n_samples, size=sample_size, replace=True)
+        X_sample = X_tr[sample_indices, :]
+        Y_sample = Y_tr[sample_indices]
+
+        # Build the Tree
+        print(f"\nBuilding tree {i+1}/{n_trees} using {sample_size} samples")
+        tree = DecisionTree(max_depth, min_node, feature_count)
+
+        # fit the tree
+        tree.fit(X_sample, Y_sample)
+        forest.append(tree)
+
+    # Prediction:
+    n_test = X_ts.shape[0]
+    votes = np.zeros((n_test, n_trees), dtype=int)
+    
+    for i, tree in enumerate(forest):
+        predictions = tree.predict(X_ts)
+        votes[:, i] = predictions
+
+    # majority vote 
+    final_preds = []
+    
+    for i in range(n_test):
+        sample_votes = votes[i, :]
+        # get the count of each unique vote value
+        vote_counts = np.bincount(sample_votes)
+        # get the index of the highest count
+        final_pred = vote_counts.argmax()
+        final_preds.append(final_pred)
+
+    # Final predictions
+    final_preds = np.array(final_preds)
+
+    return final_preds
+    
 
 def main(args):
     """
