@@ -134,11 +134,34 @@ class DecisionTree:
             right = self._grow_tree(x[right_mask], y[right_mask], depth + 1)
         )
     
-    def predict(self, sample):
+    def predict(self, samples):
         '''
         Predict the class of a sample
+        @params:
+        sample: numpy array - samples to predict
+        
+        @returns: 
+        predictions: numpy array - predicted classes
         '''
-        pass
+        if len(samples.shape) == 1:
+            return self.predict_single(self.root, samples)
+        else:
+            return np.array([self.predict_single(self.root, sample) for sample in samples])
+        
+    def predict_single(self, node, sample):
+        '''
+        Predict the class of a single sample
+        '''
+
+        # if the node is a leaf, return its value
+        if node.value is not None:
+            return node.value
+            
+        # decide which branch to follow
+        if sample[node.feature] <= node.threshold:
+            return self.predict_single(node.left, sample)
+        else:
+            return self.predict_single(node.right, sample)
 
 
 def parse_args():
@@ -451,6 +474,9 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
     model = DecisionTree(max_depth=10, min_node=2)
     model.fit(X_tr, Y_tr)
 
+    prediction = model.predict(X_ts)
+    return prediction
+
 def main(args):
     """
     Perform main logic of program
@@ -495,10 +521,10 @@ def main(args):
 
     # perform final classification
     print("Performing Stage 1 classification ... ")
-    pred = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts)
+    prediction = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts)
 
     # print classification report
-    # print(classification_report(Y_ts, pred, target_names=le.classes_))
+    print(classification_report(Y_ts, prediction, target_names=le.classes_))
 
 
 if __name__ == "__main__":
