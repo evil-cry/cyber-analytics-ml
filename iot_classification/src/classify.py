@@ -94,14 +94,19 @@ class DecisionTree:
             print("Pure node (single class)")
             return leaf
         
-        _, parent_counts = np.unique(y, return_counts=True)
-        parent_p = parent_counts / len(y)
-        parent_gini = 1 - np.sum(parent_p ** 2)
-        
-        split_result = split(x, y)
-        if split_result[0] is None:
-            return leaf  # Return a leaf if no valid split is found
-        best_gini, (feature, threshold) = split_result
+        best_gini, (feature, threshold) = split(x, y)
+        parent_gini = gini_index(y)
+
+        if best_gini is None:
+            print(f"{indent} Unable to find a valid split")
+            return leaf
+
+        # check if the split improves Gini impurity
+        # either best gini is better than parent gini
+        # or the split has no samples
+        if best_gini >= parent_gini or threshold == 0:
+            print(f"{indent} No improvement in Gini impurity (parent: {parent_gini:.4f}, best: {best_gini:.4f})")
+            return leaf
 
         feature_names = [f"Feature {i}" for i in range(x.shape[1])]
         feature_name = feature_names[feature]
@@ -128,6 +133,12 @@ class DecisionTree:
             left = self._grow_tree(x[left_mask], y[left_mask], depth + 1),
             right = self._grow_tree(x[right_mask], y[right_mask], depth + 1)
         )
+    
+    def predict(self, sample):
+        '''
+        Predict the class of a sample
+        '''
+        pass
 
 
 def parse_args():
@@ -141,7 +152,7 @@ def parse_args():
             parser.error("That directory {} does not exist!".format(x))
         else:
             return x
-    parser.add_argument('-r', '--root', type=lambda x: check_path(parser, x), default='iot_classification/corpus/iot_data',
+    parser.add_argument('-r', '--root', type=lambda x: check_path(parser, x), 
                         help='The path to the root directory containing feature files.')
     parser.add_argument('-s', '--split', type=float, default=0.7, 
                         help='The percentage of samples to use for training.')
@@ -367,7 +378,7 @@ def gini_impurity(left: list, right: list) -> float:
       
     return gini
 
-def split(samples: list, labels: list) -> tuple:
+def split(samples: list, labels: list) -> int:
     '''
     Split a group of labels into two groups based on the Gini impurity.
 
@@ -383,22 +394,23 @@ def split(samples: list, labels: list) -> tuple:
     n_samples, n_features = samples.shape
       
     if n_samples == 0:
-        return None, 0
-      
+        return None, (0, 0)
+    
+    # start best gini as infinity, since best gini is the lowest
     best_gini = float("inf")
-    b = None
+    index_plus_threshold = None
 
-    for i in range(n_features):
-        f = samples[:, i]
-        u = np.unique(f)
+    for index in range(n_features):
+        feature = samples[:, index]
+        unique = np.unique(feature)
 
-        if len(u) <= 1:
+        if len(unique) <= 1:
             continue
 
-        split_t = (u[:-1] + u[1:]) / 2 
+        split_t = (unique[:-1] + unique[1:]) / 2 
 
-        for t in split_t:
-            l_mask = f <= t
+        for threshold in split_t:
+            l_mask = feature <= threshold
             r_mask = ~l_mask
 
             left = labels[l_mask]
@@ -408,95 +420,36 @@ def split(samples: list, labels: list) -> tuple:
             
             if gini < best_gini:
                 best_gini = gini
-                b = (i, t)
+                index_plus_threshold = index, threshold
 
-    if b is None:
-        return None, 0
+    if index_plus_threshold is None:
+        return None, (0, 0)
 
-    return best_gini, b
+    return best_gini, index_plus_threshold
 
 def do_stage_1(X_tr, X_ts, Y_tr, Y_ts):
     """
-    Random Forest Classifier
-    @params
-    - X_tr : numpy array
-             Array containing training samples.
-    - Y_tr : numpy array
-             Array containing training labels.
-    - X_ts : numpy array
-             Array containing testing samples.
-    - Y_ts : numpy array
-             Array containing testing labels
+    Perform stage 1 of the classification procedure:
+        train a random forest classifier using the NB prediction probabilities
+
+    Parameters
+    ----------
+    X_tr : numpy array
+           Array containing training samples.
+    Y_tr : numpy array
+           Array containing training labels.
+    X_ts : numpy array
+           Array containing testing samples.
+    Y_ts : numpy array
+           Array containing testing labels
+
     Returns
     -------
-    final_preds : numpy array
-                  Final predictions on testing dataset.
+    pred : numpy array
+           Final predictions on testing dataset.
     """
-    # Hyperparameters
-    n_trees = 10          # Total number of decision trees in the forest 
-    per_data = 0.7        # Use 70% of the training data
-    feature_subcount = 3  # Number of features to sample for each tree
-
-    n_samples, n_features = X_tr.shape
-    forest = []  # List to hold tuples - (tree, feature_indices)
-
-    # Create each tree in the forest
-    for i in range(n_trees):
-        
-        # Calculate the number of samples in the current tree, then randomly select training data
-        sample_size = int(per_data * n_samples)
-        sample_indices = np.random.choice(n_samples, size=sample_size, replace=True)
-        X_sample = X_tr[sample_indices, :]
-        Y_sample = Y_tr[sample_indices]
-
-        # Randomly sample feature indices to use for this tree
-        feature_indices = np.random.choice(n_features, size=feature_subcount, replace=True)
-        X_sample_sub = X_sample[:, feature_indices]
-
-       # Build the Tree and train it
-        print(f"\nBuilding tree {i+1}/{n_trees} using {sample_size} samples and feature subset {feature_indices}")
-        tree = DecisionTree(max_depth=10, min_node=2)
-        tree.fit(X_sample_sub, Y_sample)
-        forest.append((tree, feature_indices))
-
-    # Prediction:
-    n_test = X_ts.shape[0]
-    votes = np.zeros((n_test, n_trees), dtype=int)
-    
-    for i, (tree, feat_idx) in enumerate(forest):
-        # Restrict test data to the feature subset for only this tree
-        X_test_sub = X_ts[:, feat_idx]
-        
-        tree_preds = []
-        for x in X_test_sub:
-            # Start at the root node
-            node = tree.root
-            
-            while node.left is not None or node.right is not None:
-                
-                if node.feature is None or node.threshold is None:
-                    break
-                if x[node.feature] <= node.threshold:
-                    node = node.left
-                else:
-                    node = node.right
-            tree_preds.append(node.value)
-        
-    votes[:, i] = np.array(tree_preds)
-
-    # Majority vote 
-    final_preds = []
-    
-    # For each test sample, get the vote
-    for i in range(n_test):
-        sample_votes = votes[i, :]
-        final_pred = np.bincount(sample_votes).argmax()
-        final_preds.append(final_pred)
-
-    # Final predictions
-    final_preds = np.array(final_preds)
-
-    return final_preds
+    model = DecisionTree(max_depth=10, min_node=2)
+    model.fit(X_tr, Y_tr)
 
 def main(args):
     """
@@ -545,7 +498,7 @@ def main(args):
     pred = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts)
 
     # print classification report
-    print(classification_report(Y_ts, pred, target_names=le.classes_))
+    # print(classification_report(Y_ts, pred, target_names=le.classes_))
 
 
 if __name__ == "__main__":
