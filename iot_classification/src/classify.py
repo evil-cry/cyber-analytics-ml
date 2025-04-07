@@ -94,6 +94,10 @@ class DecisionTree:
             print("Pure node (single class)")
             return leaf
         
+        _, parent_counts = np.unique(y, return_counts=True)
+        parent_p = parent_counts / len(y)
+        parent_gini = 1 - np.sum(parent_p ** 2)
+        
         split_result = split(x, y)
         if split_result[0] is None:
             return leaf  # Return a leaf if no valid split is found
@@ -137,7 +141,7 @@ def parse_args():
             parser.error("That directory {} does not exist!".format(x))
         else:
             return x
-    parser.add_argument('-r', '--root', type=lambda x: check_path(parser, x), default='./corpus/iot_data',
+    parser.add_argument('-r', '--root', type=lambda x: check_path(parser, x), default='iot_classification/corpus/iot_data',
                         help='The path to the root directory containing feature files.')
     parser.add_argument('-s', '--split', type=float, default=0.7, 
                         help='The percentage of samples to use for training.')
@@ -325,6 +329,18 @@ def do_stage_0(Xp_tr, Xp_ts, Xd_tr, Xd_ts, Xc_tr, Xc_ts, Y_tr, Y_ts):
 
     return resp_tr, resp_ts, resd_tr, resd_ts, resc_tr, resc_ts
 
+def gini_index(labels: list) -> float:
+    '''
+    Calculate the Gini impurity of a sample
+    '''
+    if len(labels) == 0:
+        return 0
+    
+    _, counts = np.unique(labels, return_counts=True)
+    p = counts / len(labels)
+    
+    gini = 1 - np.sum(p ** 2)
+    return gini
 
 def gini_impurity(left: list, right: list) -> float:
     '''
@@ -339,19 +355,6 @@ def gini_impurity(left: list, right: list) -> float:
             The Gini impurity of the set of labels.
     '''
      
-    def gini_index(labels: list) -> float:
-        '''
-        Calculate the Gini impurity of a sample
-        '''
-        if len(labels) == 0:
-            return 0
-        
-        _, counts = np.unique(labels, return_counts=True)
-        p = counts / len(labels)
-        
-        gini = 1 - np.sum(p ** 2)
-        return gini
-     
     n_left = len(left)
     n_right = len(right)
     n_total = n_left + n_right
@@ -364,7 +367,7 @@ def gini_impurity(left: list, right: list) -> float:
       
     return gini
 
-def split(samples: list, labels: list) -> int:
+def split(samples: list, labels: list) -> tuple:
     '''
     Split a group of labels into two groups based on the Gini impurity.
 
@@ -408,7 +411,7 @@ def split(samples: list, labels: list) -> int:
                 b = (i, t)
 
     if b is None:
-        return None, None
+        return None, 0
 
     return best_gini, b
 
@@ -501,7 +504,7 @@ def main(args):
     """
     # load dataset
     print("Loading dataset ... ")
-    X, X_p, X_d, X_c, Y = load_data('corpus/iot_data')
+    X, X_p, X_d, X_c, Y = load_data('iot_classification/corpus/iot_data')
 
     # encode labels
     print("Encoding labels ... ")
@@ -542,7 +545,7 @@ def main(args):
     pred = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts)
 
     # print classification report
-    # print(classification_report(Y_ts, pred, target_names=le.classes_))
+    print(classification_report(Y_ts, pred, target_names=le.classes_))
 
 
 if __name__ == "__main__":
