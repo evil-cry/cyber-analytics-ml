@@ -12,7 +12,6 @@ def warn(*args, **kwargs):
 import warnings
 warnings.warn = warn
 
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
