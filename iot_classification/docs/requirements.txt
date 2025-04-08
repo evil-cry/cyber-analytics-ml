@@ -1,3 +1,10 @@
 scikit-learn
 numpy
 tqdm
+json
+argparse
+numpy
+tqdm
+multiprocessing
+functools
+itertools
