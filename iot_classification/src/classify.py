@@ -218,13 +218,15 @@ class DecisionTree:
         Split a group of labels into two groups based on the Gini impurity.
 
         @params
-        - grourps: left and right group of samples
+        - groups: left and right group of samples
         - labels: list of classes/labels
-        - feature_count: number of features to select randomly
+        - self.feature_count: number of features to select randomly
 
         @returns
-        - b: (int, int)
-                Tuple of the best feature index and threshold.
+        - best_gini: float
+            The Gini impurity value of the best split found
+        - index_plus_threshold: (int, float)
+            Tuple of the best feature index and threshold value that produces the optimal split
         '''
         
         n_samples, n_features = samples.shape
@@ -244,23 +246,28 @@ class DecisionTree:
 
         # iterate through features to find the best split
         for index in feature_indices:
+            # Extract unique features
             feature = samples[:, index]
             unique = np.unique(feature)
 
+            # Skip features with only one unique value
             if len(unique) <= 1:
                 continue
 
+            # Calculate thresholds between consecutive unique values
             split_t = (unique[:-1] + unique[1:]) / 2 
 
             for threshold in split_t:
+                # Create boolean masks for left and right
                 l_mask = feature <= threshold
-                r_mask = ~l_mask
+                r_mask = ~l_mask # feature > threshold
 
                 left = labels[l_mask]
                 right = labels[r_mask]
                 
                 gini = self.gini_impurity(left, right)
                 
+                # Update if split is better than previous best
                 if gini < best_gini:
                     best_gini = gini
                     index_plus_threshold = index, threshold
@@ -684,7 +691,7 @@ def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
                 best_tree_count = n_trees
     
     best_params['n_trees'] = best_tree_count
-    print(f'Found best tree count: {best_params['n_trees']} with accuracy {best_accuracy:.4f}')
+    print(f"Found best tree count: {best_params['n_trees']} with accuracy {best_accuracy:.4f}")
     
     return best_params
 
