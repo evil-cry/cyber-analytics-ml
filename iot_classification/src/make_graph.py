@@ -3,9 +3,6 @@ AI Usage Statement
 Tools Used: Copilot (Claude 3.7 Sonnet)
 - Usage: Making the graphs from the save file I made. Graph types were selected by me.
 - Verification: The graphs look correct and match the data. The code was reviewed and rewritten to fit the needs.
-
-- Usage: Understanding what the heck sklearn 'le' is and mapping the labels to device names.
-- Verification: The comments for that section were written by me, explaining based on how I understood it reply to explain
 Prohibited Use Compliance: Confirmed
 '''
 
@@ -296,15 +293,14 @@ def confusion_matrix(le, matrix, true, predicted, output_dir='iot_classification
     device_mapping = pd.read_csv('iot_classification/corpus/list_of_devices.csv', header=None, names=['Device', 'Hash'])
     device_mapping_dict = dict(zip(device_mapping['Hash'].str.strip(), device_mapping['Device'].str.strip()))
 
-    # 'le' is the label encoder, used to transform string labels to numbers
-    # inverse_transform is used to decode the numbers into strings
-    true_labels = [device_mapping_dict.get(label, label) for label in le.inverse_transform(true)]
-    predicted_labels = [device_mapping_dict.get(label, label) for label in le.inverse_transform(predicted)]
+    class_labels = le.classes_
+
+    decoded_labels = [device_mapping_dict.get(label, label) for label in class_labels]
 
     # plot
-    plt.figure(figsize=(24, 24))
+    plt.figure(figsize=(20, 20))
     sns.heatmap(matrix, annot=True, fmt='d', cmap='viridis', 
-                xticklabels=true_labels, yticklabels=predicted_labels)
+                xticklabels=decoded_labels, yticklabels=decoded_labels)
     plt.xlabel('Predicted Labels')
     plt.ylabel('True Labels')
     plt.title('Confusion Matrix')
