@@ -824,12 +824,12 @@ def main(args):
         print("\n===== Non-trivial Node Details =====")
         print(f"Selected node split on: Feature {non_leaf_node.feature} (Threshold: {non_leaf_node.threshold:.4f})")
         print(f"Parent node sample count: {non_leaf_node.n_samples}, Gini impurity: {non_leaf_node.gini:.4f}")
-        print(f"Class distribution at parent node: {non_leaf_node.class_counts}")
+        print(f"Class distribution at parent node: { {int(k): int(v) for k, v in non_leaf_node.class_counts.items()} }")
 
         left = non_leaf_node.left
         right = non_leaf_node.right
-        print(f"Left child sample count: {left.n_samples}, Gini impurity: {left.gini:.4f}, class distribution: {left.class_counts}")
-        print(f"Right child sample count: {right.n_samples}, Gini impurity: {right.gini:.4f}, class distribution: {right.class_counts}")
+        print(f"Left child sample count: {left.n_samples}, Gini impurity: {left.gini:.4f}, class distribution: { {int(k): int(v) for k, v in left.class_counts.items()} }")
+        print(f"Right child sample count: {right.n_samples}, Gini impurity: {right.gini:.4f}, class distribution: { {int(k): int(v) for k, v in right.class_counts.items()} }")
 
         weighted_impurity = (left.n_samples / non_leaf_node.n_samples) * left.gini + \
                             (right.n_samples / non_leaf_node.n_samples) * right.gini
