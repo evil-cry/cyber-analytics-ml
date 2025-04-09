@@ -36,6 +36,9 @@ class Node:
         self.left = left
         self.right = right
         self.value = value
+        self.n_samples = None      # number of samples that reached the node
+        self.gini = None           # Gini impurity of the node
+        self.class_counts = None   # dictionary: class -> count
 
 class DecisionTree:
     '''
@@ -86,6 +89,9 @@ class DecisionTree:
         most_common = values[most_common_i]
 
         leaf = Node(value=most_common)
+        leaf.n_samples = n_samples
+        leaf.gini = self.gini_index(y)
+        leaf.class_counts = dict(zip(values, counts))
 
         # 1. Maximum depth reached
         if self.max_depth is not None and depth >= self.max_depth:
@@ -142,12 +148,16 @@ class DecisionTree:
             print(f'{indent} Left branch: {np.sum(left_mask)} samples')
             print(f'{indent} Right branch: {np.sum(right_mask)} samples')
 
-        return Node(
-            feature = feature, 
-            threshold = threshold,
-            left = self._grow_tree(x[left_mask], y[left_mask], depth + 1),
-            right = self._grow_tree(x[right_mask], y[right_mask], depth + 1)
-        )
+        left_node = self._grow_tree(x[left_mask], y[left_mask], depth + 1)
+        right_node = self._grow_tree(x[right_mask], y[right_mask], depth + 1)
+
+        # Create a non-leaf node with the split information
+        node = Node(feature=feature, threshold=threshold, left=left_node, right=right_node)
+        node.n_samples = n_samples
+        node.gini = self.gini_index(y)
+        node.class_counts = dict(zip(values, counts))
+
+        return node
     
     def predict(self, samples):
         '''
@@ -497,6 +507,9 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts, printf = True, **kwargs):
     final_preds : numpy array
                   Final predictions on testing dataset.
     '''
+    
+    return_forest = kwargs.pop('return_forest', False)
+    
     # Tree Hyperparameters
     max_depth = kwargs.get('max_depth', 10)             # maximum depth of the tree
     min_node = kwargs.get('min_node', 2)                # minimum number of samples in a node
@@ -548,8 +561,10 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts, printf = True, **kwargs):
 
     # Final predictions
     final_preds = np.array(final_preds)
-
-    return final_preds
+    if return_forest:
+        return final_preds, forest
+    else:
+        return final_preds
 
 def evaluate_hyperparameters(params, X_tr_full, X_ts_full, Y_tr, Y_ts, target_names, n_trees):
     '''
@@ -728,6 +743,19 @@ def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names, session
 
     return best_params
 
+def get_first_non_leaf_node(node):
+    '''
+    Recursively find the first non-leaf (non-trivial) node in a decision tree.
+    '''
+    if node is None:
+        return None
+    if node.value is None:  
+        return node
+    non_leaf = get_first_non_leaf_node(node.left)
+    if non_leaf is not None:
+        return non_leaf
+    return get_first_non_leaf_node(node.right)
+
 def main(args):
     '''
     Perform main logic of program
@@ -781,11 +809,38 @@ def main(args):
         'per_data': 0.7
     }
 
-    prediction = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts, True, **kwargs)
+    prediction, forest = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts, True, return_forest=True, **kwargs)
 
     # print the report
     string_report = classification_report(Y_ts, prediction, target_names=le.classes_, output_dict=False)
     print(string_report)
+    
+    
+    # === EXTRA: Print a non-trivial node from one of the trees ===
+    selected_tree = forest[0]
+    non_leaf_node = get_first_non_leaf_node(selected_tree.root)
+    if non_leaf_node:
+        total_samples = selected_tree.root.n_samples  # total samples at root of this tree
+        print("\n===== Non-trivial Node Details =====")
+        print(f"Selected node split on: Feature {non_leaf_node.feature} (Threshold: {non_leaf_node.threshold:.4f})")
+        print(f"Parent node sample count: {non_leaf_node.n_samples}, Gini impurity: {non_leaf_node.gini:.4f}")
+        print(f"Class distribution at parent node: {non_leaf_node.class_counts}")
+
+        left = non_leaf_node.left
+        right = non_leaf_node.right
+        print(f"Left child sample count: {left.n_samples}, Gini impurity: {left.gini:.4f}, class distribution: {left.class_counts}")
+        print(f"Right child sample count: {right.n_samples}, Gini impurity: {right.gini:.4f}, class distribution: {right.class_counts}")
+
+        weighted_impurity = (left.n_samples / non_leaf_node.n_samples) * left.gini + \
+                            (right.n_samples / non_leaf_node.n_samples) * right.gini
+        improvement = non_leaf_node.gini - weighted_impurity
+        node_importance = (non_leaf_node.n_samples / total_samples) * improvement
+
+        print(f"Weighted impurity of children: {weighted_impurity:.4f}")
+        print(f"Impurity decrease (improvement): {improvement:.4f}")
+        print(f"Node importance (weighted by sample proportion): {node_importance:.4f}")
+    else:
+        print("No non-trivial node found in the first tree.")
 
     
     cm = sklearn_confusion_matrix(Y_ts, prediction)
