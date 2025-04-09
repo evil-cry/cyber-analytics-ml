@@ -5,7 +5,9 @@ import argparse
 import os
 import numpy as np
 import tqdm
+import csv
 import itertools
+import pickle
 import multiprocessing as mp
 from functools import partial
 
@@ -18,6 +20,7 @@ warnings.warn = warn
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix as sklearn_confusion_matrix
 
 # seed value
 # (ensures consistent dataset splitting between runs)
@@ -548,7 +551,7 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts, printf = True, **kwargs):
 
     return final_preds
 
-def evaluate_hyperparameters(params, X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
+def evaluate_hyperparameters(params, X_tr_full, X_ts_full, Y_tr, Y_ts, target_names, n_trees):
     '''
     Evaluate a single set of hyperparameters
     This still builds a forest! Just uses the default value.
@@ -558,7 +561,8 @@ def evaluate_hyperparameters(params, X_tr_full, X_ts_full, Y_tr, Y_ts, target_na
     kwargs = {
         'max_depth': max_depth,
         'min_node': min_node,
-        'feature_count': feature_count
+        'feature_count': feature_count,
+        'n_trees': n_trees or 10
     }
     
     # the accuracy wobbles, so take the average 
@@ -592,10 +596,21 @@ def evaluate_tree_count(n_trees, best_params, X_tr_full, X_ts_full, Y_tr, Y_ts, 
     avg_accuracy = sum(accuracies) / len(accuracies)
     return (n_trees, avg_accuracy)
 
-def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
+class Save:
+    '''
+    used to save the hyperparameter data for the graphs
+    '''
+    def __init__(self):
+        self.trees = []
+        self.forests = []
+
+def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names, session=1, tree_count_override = None):
     '''
     Tune hyperparameters
     '''
+    import time
+    start = time.time()
+
     print('Tuning tree hyperparameters...')
     
     # default hyperparameters
@@ -604,23 +619,12 @@ def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
         'min_node': 2,
         'feature_count': None,
     }
-    
+
     # these were the original test values
-    '''
+    # we also tested max depth above 100 but it didn't improve performance
     max_depth_values = [None, 3, 5, 10, 15, 20, 30, 50, 75, 100]
     min_node_values = [1, 2, 4, 8, 16, 32, 64, 100]
     feature_count_values = [None, 3, 5, 10, 20, 30, 50, 75, 100]
-    '''
-
-    # these are changed based on the results of the original tests
-    # it seems that max_depth values above 100 are not giving improvements (perhaps even less than 100 but 100 doesn't take too much computing)
-    max_depth_values = [100, 125, 150, 200, 250, 300, 400, 500, 1000]
-    # quadruple the tests
-    max_depth_values.extend(max_depth_values)
-    max_depth_values.extend(max_depth_values)
-
-    min_node_values = [1]
-    feature_count_values = [10]
     
     # all combinations of hyperparameters
     param_combinations = list(itertools.product(
@@ -639,37 +643,53 @@ def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
         X_ts_full=X_ts_full,
         Y_tr=Y_tr,
         Y_ts=Y_ts,
-        target_names=target_names
+        target_names=target_names,
+        n_trees=tree_count_override or 10
     )
-    
+
     # USE (almost) MAXIMUM POWER
     # https://tenor.com/view/spongebob-maximum-power-power-spongebob-squarepants-full-power-gif-22777727
     cores = max(1, mp.cpu_count() - 1)
     
     best_accuracy = 0
     best_params = kwargs.copy()
+
+    save = Save()
     
-    with mp.Pool(processes=cores) as pool:
-        for max_depth, min_node, feature_count, accuracy in pool.imap_unordered(worker_fn, param_combinations):
-            params = {
-                'max_depth': max_depth,
-                'min_node': min_node,
-                'feature_count': feature_count
-            }
-            print(f'\tHyperparameters: {params}, Accuracy: {accuracy:.4f}')
-            
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
-                best_params = params.copy()
+    # to sync the results
+    with mp.Manager() as manager:
+        results = manager.list()
+        
+        with mp.Pool(processes=cores) as pool:
+            for max_depth, min_node, feature_count, accuracy in pool.imap_unordered(worker_fn, param_combinations):
+                params = {
+                    'max_depth': max_depth,
+                    'min_node': min_node,
+                    'feature_count': feature_count,
+                }
+                print(f'\tHyperparameters: {params}, Accuracy: {accuracy:.4f}')
+                
+                # Safely append to the shared list
+                results.append([max_depth, min_node, feature_count, tree_count_override or 10, accuracy])
+                
+                if accuracy > best_accuracy:
+                    best_accuracy = accuracy
+                    best_params = params.copy()
+
+        save.trees = list(results)
     
     print(f'Found best tree hyperparameters: {best_params} with accuracy {best_accuracy:.4f}')
-    
+
     print('Tuning forest hyperparameters using best tree hyperparameters...')
 
-    #tree_counts = [1, 5, 10, 20, 50, 75, 100]
-    # found that tree counts above 25 are not giving improvements (perhaps even less than 25 but that doesn't take too much computing)
-    tree_counts = [25, 50, 75, 100] #, 125, 150, 200, 250, 300]
-    
+    tree_counts = [1, 5, 10, 20, 50, 75, 100]
+
+    if tree_count_override:
+        tree_counts = [tree_count_override for _ in range(15)]
+
+    # DOUBLE THE TESTS!!!
+    tree_counts.extend(tree_counts)
+
     tree_worker = partial(
         evaluate_tree_count,
         best_params=best_params,
@@ -681,18 +701,31 @@ def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
     )
     
     best_tree_count = 1
+    best_accuracy = 0
     
-    with mp.Pool(processes=cores) as pool:
-        for n_trees, accuracy in pool.imap_unordered(tree_worker, tree_counts):
-            print(f'\tTree count {n_trees}: Average accuracy {accuracy:.4f}')
-            
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
-                best_tree_count = n_trees
+    with mp.Manager() as manager:
+        forest_results = manager.list()
+
+        with mp.Pool(processes=cores) as pool:
+            for n_trees, accuracy in pool.imap_unordered(tree_worker, tree_counts):
+                print(f'\tTree count {n_trees}: Average accuracy {accuracy:.4f}')
+                forest_results.append([n_trees, accuracy])
+
+                if accuracy > best_accuracy:
+                    best_accuracy = accuracy
+                    best_tree_count = n_trees
+        
+        save.forests = list(forest_results)
+
+    os.makedirs('iot_classification/docs/tuning', exist_ok=True)
+    pickle.dump(save, open(f'iot_classification/docs/tuning/{session}.pklrick', 'wb'))
     
     best_params['n_trees'] = best_tree_count
-    print(f"Found best tree count: {best_params['n_trees']} with accuracy {best_accuracy:.4f}")
+    print(f'Found best tree count: {best_params['n_trees']} with accuracy {best_accuracy:.4f}')
     
+    end = time.time()
+    print(f'Time taken: {(end-start):.2f} seconds')
+
     return best_params
 
 def main(args):
@@ -740,13 +773,12 @@ def main(args):
     # perform final classification
     print('Performing Stage 1 classification ... ')
     
-    # found using tune_hyperparameters
     kwargs = {
-        'max_depth': 100, # might be even less than 100
-        'min_node': 1, # 1 is the best
-        'feature_count': 10, # 10 is the best
-        'n_trees': 25, # didn't change much above 25
-        'per_data': 0.7 # 70% of the data is used for training
+        'max_depth': 15, 
+        'min_node': 1, 
+        'feature_count': 10, 
+        'n_trees': 25, 
+        'per_data': 0.7
     }
 
     prediction = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts, True, **kwargs)
@@ -755,9 +787,15 @@ def main(args):
     string_report = classification_report(Y_ts, prediction, target_names=le.classes_, output_dict=False)
     print(string_report)
 
+    
+    cm = sklearn_confusion_matrix(Y_ts, prediction)
+    from make_graph import confusion_matrix
+    confusion_matrix(le, cm, le, prediction, 'iot_classification/graphs', '1')
+
     # tune hyperparameters (uncomment to use)
-    #hyperparameters = tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, le.classes_)
+    #hyperparameters = tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, le.classes_, '6')
     #print('Best hyperparameters: ', hyperparameters)
+    
 
 if __name__ == '__main__':
     # parse cmdline args
