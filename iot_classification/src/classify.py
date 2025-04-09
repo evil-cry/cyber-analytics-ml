@@ -845,7 +845,7 @@ def main(args):
     
     cm = sklearn_confusion_matrix(Y_ts, prediction)
     from make_graph import confusion_matrix
-    confusion_matrix(le, cm, Y_ts, prediction, 'iot_classification/graphs', '1')
+    confusion_matrix(le, cm, Y_ts, prediction, 'iot_classification/graphs', '3')
 
     # tune hyperparameters (uncomment to use)
     #hyperparameters = tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, le.classes_, '6')
