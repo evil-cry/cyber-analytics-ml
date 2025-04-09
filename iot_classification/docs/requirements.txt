@@ -8,3 +8,8 @@ tqdm
 multiprocessing
 functools
 itertools
+csv
+pandas
+seaborn
+matplotlib
+pickle
