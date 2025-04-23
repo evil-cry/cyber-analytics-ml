@@ -4,13 +4,14 @@ Tools Used: ChatGPT (o4-mini)
 - Usage: Discussing ideas for encoding each column of the dataset.
 - Verification: No code was given to me by the AI. All the ideas were bounced around and verified against my knowledge of the course material.
 
-- Usage: Minor help with DataFrames
-- Verification: pandas documentation
+- Usage: Minor help with DataFrame reading and manipulation.
+- Verification: pandas and glob documentation
 
 Prohibited Use Compliance: Confirmed
 '''
 import pandas as pd
 import numpy as np
+import glob
 
 from pandas import DataFrame
 
@@ -34,7 +35,7 @@ class Model:
             self.predictions = self._classify()
 
         except (KeyError, AttributeError) as e:
-            raise KeyError(f"Data does not contain a required key (perpahs it's None? - {e}.")
+            raise KeyError(f"Data does not contain a required key. Perpahs it's None? - {e}.")
 
     def _train(self):
         self.model.fit(self.X_train, self.Y_train)
@@ -52,17 +53,22 @@ class Model:
         return report
 
 class Data:
-    def __init__(self, filepath = 'darknet/corpus/darknet.csv', kwargs = {}):
-        self.filepath: str = filepath
+    def __init__(self, filepaths = 'darknet/corpus/parts/*.csv', kwargs = {}):
+        self.glob: list = glob.glob(filepaths)
+
+        if not self.glob:
+            raise FileNotFoundError(f'No files found in {filepaths}')
+
         self.data: DataFrame = None
         self.kwargs = kwargs
 
-        self._read(filepath)
+        self._read()
         self._extract_features(self.kwargs)
 
-    def _read(self, filepath):
+    def _read(self):
         try:
-            self.data = pd.read_csv(filepath, delimiter=',')
+            dataframes = [pd.read_csv(fp, delimiter=',') for fp in self.glob]
+            self.data = pd.concat(dataframes, ignore_index=True)
 
             self.data.columns = self.data.columns.str.lower() # set columns to lowercase for easier access
             self.data = self.data.map(lambda x: str(x).lower() if isinstance(x, str) else x) # set all rows to lowercase if they are strings
@@ -90,8 +96,8 @@ class Data:
             # drop Nones
             self.data.dropna(inplace=True)
 
-        except FileNotFoundError:
-            print(f'File {filepath} not found.')
+        except FileNotFoundError as e:
+            print(f'One of the files was not found - {e}')
             exit()
         
     def _extract_features(self, kwargs):
