@@ -5,7 +5,9 @@ import argparse
 import os
 import numpy as np
 import tqdm
+import csv
 import itertools
+import pickle
 import multiprocessing as mp
 from functools import partial
 
@@ -18,6 +20,7 @@ warnings.warn = warn
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix as sklearn_confusion_matrix
 
 # seed value
 # (ensures consistent dataset splitting between runs)
@@ -33,6 +36,9 @@ class Node:
         self.left = left
         self.right = right
         self.value = value
+        self.n_samples = None      # number of samples that reached the node
+        self.gini = None           # Gini impurity of the node
+        self.class_counts = None   # dictionary: class -> count
 
 class DecisionTree:
     '''
@@ -83,6 +89,9 @@ class DecisionTree:
         most_common = values[most_common_i]
 
         leaf = Node(value=most_common)
+        leaf.n_samples = n_samples
+        leaf.gini = self.gini_index(y)
+        leaf.class_counts = dict(zip(values, counts))
 
         # 1. Maximum depth reached
         if self.max_depth is not None and depth >= self.max_depth:
@@ -139,12 +148,16 @@ class DecisionTree:
             print(f'{indent} Left branch: {np.sum(left_mask)} samples')
             print(f'{indent} Right branch: {np.sum(right_mask)} samples')
 
-        return Node(
-            feature = feature, 
-            threshold = threshold,
-            left = self._grow_tree(x[left_mask], y[left_mask], depth + 1),
-            right = self._grow_tree(x[right_mask], y[right_mask], depth + 1)
-        )
+        left_node = self._grow_tree(x[left_mask], y[left_mask], depth + 1)
+        right_node = self._grow_tree(x[right_mask], y[right_mask], depth + 1)
+
+        # Create a non-leaf node with the split information
+        node = Node(feature=feature, threshold=threshold, left=left_node, right=right_node)
+        node.n_samples = n_samples
+        node.gini = self.gini_index(y)
+        node.class_counts = dict(zip(values, counts))
+
+        return node
     
     def predict(self, samples):
         '''
@@ -218,13 +231,15 @@ class DecisionTree:
         Split a group of labels into two groups based on the Gini impurity.
 
         @params
-        - grourps: left and right group of samples
+        - groups: left and right group of samples
         - labels: list of classes/labels
-        - feature_count: number of features to select randomly
+        - self.feature_count: number of features to select randomly
 
         @returns
-        - b: (int, int)
-                Tuple of the best feature index and threshold.
+        - best_gini: float
+            The Gini impurity value of the best split found
+        - index_plus_threshold: (int, float)
+            Tuple of the best feature index and threshold value that produces the optimal split
         '''
         
         n_samples, n_features = samples.shape
@@ -244,23 +259,28 @@ class DecisionTree:
 
         # iterate through features to find the best split
         for index in feature_indices:
+            # Extract unique features
             feature = samples[:, index]
             unique = np.unique(feature)
 
+            # Skip features with only one unique value
             if len(unique) <= 1:
                 continue
 
+            # Calculate thresholds between consecutive unique values
             split_t = (unique[:-1] + unique[1:]) / 2 
 
             for threshold in split_t:
+                # Create boolean masks for left and right
                 l_mask = feature <= threshold
-                r_mask = ~l_mask
+                r_mask = ~l_mask # feature > threshold
 
                 left = labels[l_mask]
                 right = labels[r_mask]
                 
                 gini = self.gini_impurity(left, right)
                 
+                # Update if split is better than previous best
                 if gini < best_gini:
                     best_gini = gini
                     index_plus_threshold = index, threshold
@@ -487,6 +507,9 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts, printf = True, **kwargs):
     final_preds : numpy array
                   Final predictions on testing dataset.
     '''
+    
+    return_forest = kwargs.pop('return_forest', False)
+    
     # Tree Hyperparameters
     max_depth = kwargs.get('max_depth', 10)             # maximum depth of the tree
     min_node = kwargs.get('min_node', 2)                # minimum number of samples in a node
@@ -538,10 +561,12 @@ def do_stage_1(X_tr, X_ts, Y_tr, Y_ts, printf = True, **kwargs):
 
     # Final predictions
     final_preds = np.array(final_preds)
+    if return_forest:
+        return final_preds, forest
+    else:
+        return final_preds
 
-    return final_preds
-
-def evaluate_hyperparameters(params, X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
+def evaluate_hyperparameters(params, X_tr_full, X_ts_full, Y_tr, Y_ts, target_names, n_trees):
     '''
     Evaluate a single set of hyperparameters
     This still builds a forest! Just uses the default value.
@@ -551,7 +576,8 @@ def evaluate_hyperparameters(params, X_tr_full, X_ts_full, Y_tr, Y_ts, target_na
     kwargs = {
         'max_depth': max_depth,
         'min_node': min_node,
-        'feature_count': feature_count
+        'feature_count': feature_count,
+        'n_trees': n_trees or 10
     }
     
     # the accuracy wobbles, so take the average 
@@ -585,10 +611,21 @@ def evaluate_tree_count(n_trees, best_params, X_tr_full, X_ts_full, Y_tr, Y_ts, 
     avg_accuracy = sum(accuracies) / len(accuracies)
     return (n_trees, avg_accuracy)
 
-def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
+class Save:
+    '''
+    used to save the hyperparameter data for the graphs
+    '''
+    def __init__(self):
+        self.trees = []
+        self.forests = []
+
+def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names, session=1, tree_count_override = None):
     '''
     Tune hyperparameters
     '''
+    import time
+    start = time.time()
+
     print('Tuning tree hyperparameters...')
     
     # default hyperparameters
@@ -597,23 +634,12 @@ def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
         'min_node': 2,
         'feature_count': None,
     }
-    
+
     # these were the original test values
-    '''
+    # we also tested max depth above 100 but it didn't improve performance
     max_depth_values = [None, 3, 5, 10, 15, 20, 30, 50, 75, 100]
     min_node_values = [1, 2, 4, 8, 16, 32, 64, 100]
     feature_count_values = [None, 3, 5, 10, 20, 30, 50, 75, 100]
-    '''
-
-    # these are changed based on the results of the original tests
-    # it seems that max_depth values above 100 are not giving improvements (perhaps even less than 100 but 100 doesn't take too much computing)
-    max_depth_values = [100, 125, 150, 200, 250, 300, 400, 500, 1000]
-    # quadruple the tests
-    max_depth_values.extend(max_depth_values)
-    max_depth_values.extend(max_depth_values)
-
-    min_node_values = [1]
-    feature_count_values = [10]
     
     # all combinations of hyperparameters
     param_combinations = list(itertools.product(
@@ -632,37 +658,53 @@ def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
         X_ts_full=X_ts_full,
         Y_tr=Y_tr,
         Y_ts=Y_ts,
-        target_names=target_names
+        target_names=target_names,
+        n_trees=tree_count_override or 10
     )
-    
+
     # USE (almost) MAXIMUM POWER
     # https://tenor.com/view/spongebob-maximum-power-power-spongebob-squarepants-full-power-gif-22777727
     cores = max(1, mp.cpu_count() - 1)
     
     best_accuracy = 0
     best_params = kwargs.copy()
+
+    save = Save()
     
-    with mp.Pool(processes=cores) as pool:
-        for max_depth, min_node, feature_count, accuracy in pool.imap_unordered(worker_fn, param_combinations):
-            params = {
-                'max_depth': max_depth,
-                'min_node': min_node,
-                'feature_count': feature_count
-            }
-            print(f'\tHyperparameters: {params}, Accuracy: {accuracy:.4f}')
-            
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
-                best_params = params.copy()
+    # to sync the results
+    with mp.Manager() as manager:
+        results = manager.list()
+        
+        with mp.Pool(processes=cores) as pool:
+            for max_depth, min_node, feature_count, accuracy in pool.imap_unordered(worker_fn, param_combinations):
+                params = {
+                    'max_depth': max_depth,
+                    'min_node': min_node,
+                    'feature_count': feature_count,
+                }
+                print(f'\tHyperparameters: {params}, Accuracy: {accuracy:.4f}')
+                
+                # Safely append to the shared list
+                results.append([max_depth, min_node, feature_count, tree_count_override or 10, accuracy])
+                
+                if accuracy > best_accuracy:
+                    best_accuracy = accuracy
+                    best_params = params.copy()
+
+        save.trees = list(results)
     
     print(f'Found best tree hyperparameters: {best_params} with accuracy {best_accuracy:.4f}')
-    
+
     print('Tuning forest hyperparameters using best tree hyperparameters...')
 
-    #tree_counts = [1, 5, 10, 20, 50, 75, 100]
-    # found that tree counts above 25 are not giving improvements (perhaps even less than 25 but that doesn't take too much computing)
-    tree_counts = [25, 50, 75, 100] #, 125, 150, 200, 250, 300]
-    
+    tree_counts = [1, 5, 10, 20, 50, 75, 100]
+
+    if tree_count_override:
+        tree_counts = [tree_count_override for _ in range(15)]
+
+    # DOUBLE THE TESTS!!!
+    tree_counts.extend(tree_counts)
+
     tree_worker = partial(
         evaluate_tree_count,
         best_params=best_params,
@@ -674,19 +716,45 @@ def tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, target_names):
     )
     
     best_tree_count = 1
+    best_accuracy = 0
     
-    with mp.Pool(processes=cores) as pool:
-        for n_trees, accuracy in pool.imap_unordered(tree_worker, tree_counts):
-            print(f'\tTree count {n_trees}: Average accuracy {accuracy:.4f}')
-            
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
-                best_tree_count = n_trees
+    with mp.Manager() as manager:
+        forest_results = manager.list()
+
+        with mp.Pool(processes=cores) as pool:
+            for n_trees, accuracy in pool.imap_unordered(tree_worker, tree_counts):
+                print(f'\tTree count {n_trees}: Average accuracy {accuracy:.4f}')
+                forest_results.append([n_trees, accuracy])
+
+                if accuracy > best_accuracy:
+                    best_accuracy = accuracy
+                    best_tree_count = n_trees
+        
+        save.forests = list(forest_results)
+
+    os.makedirs('iot_classification/docs/tuning', exist_ok=True)
+    pickle.dump(save, open(f'iot_classification/docs/tuning/{session}.pklrick', 'wb'))
     
     best_params['n_trees'] = best_tree_count
     print(f'Found best tree count: {best_params['n_trees']} with accuracy {best_accuracy:.4f}')
     
+    end = time.time()
+    print(f'Time taken: {(end-start):.2f} seconds')
+
     return best_params
+
+def get_first_non_leaf_node(node):
+    '''
+    Recursively find the first non-leaf (non-trivial) node in a decision tree.
+    '''
+    if node is None:
+        return None
+    if node.value is None:  
+        return node
+    non_leaf = get_first_non_leaf_node(node.left)
+    if non_leaf is not None:
+        return non_leaf
+    return get_first_non_leaf_node(node.right)
 
 def main(args):
     '''
@@ -733,24 +801,56 @@ def main(args):
     # perform final classification
     print('Performing Stage 1 classification ... ')
     
-    # found using tune_hyperparameters
     kwargs = {
-        'max_depth': 100, # might be even less than 100
-        'min_node': 1, # 1 is the best
-        'feature_count': 10, # 10 is the best
-        'n_trees': 25, # didn't change much above 25
-        'per_data': 0.7 # 70% of the data is used for training
+        'max_depth': 15, 
+        'min_node': 1, 
+        'feature_count': 10, 
+        'n_trees': 25, 
+        'per_data': 0.7
     }
 
-    prediction = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts, True, **kwargs)
+    prediction, forest = do_stage_1(X_tr_full, X_ts_full, Y_tr, Y_ts, True, return_forest=True, **kwargs)
 
     # print the report
     string_report = classification_report(Y_ts, prediction, target_names=le.classes_, output_dict=False)
     print(string_report)
+    
+    
+    # === EXTRA: Print a non-trivial node from one of the trees ===
+    selected_tree = forest[0]
+    non_leaf_node = get_first_non_leaf_node(selected_tree.root)
+    if non_leaf_node:
+        total_samples = selected_tree.root.n_samples  # total samples at root of this tree
+        print("\n===== Non-trivial Node Details =====")
+        print(f"Selected node split on: Feature {non_leaf_node.feature} (Threshold: {non_leaf_node.threshold:.4f})")
+        print(f"Parent node sample count: {non_leaf_node.n_samples}, Gini impurity: {non_leaf_node.gini:.4f}")
+        print(f"Class distribution at parent node: { {int(k): int(v) for k, v in non_leaf_node.class_counts.items()} }")
+
+        left = non_leaf_node.left
+        right = non_leaf_node.right
+        print(f"Left child sample count: {left.n_samples}, Gini impurity: {left.gini:.4f}, class distribution: { {int(k): int(v) for k, v in left.class_counts.items()} }")
+        print(f"Right child sample count: {right.n_samples}, Gini impurity: {right.gini:.4f}, class distribution: { {int(k): int(v) for k, v in right.class_counts.items()} }")
+
+        weighted_impurity = (left.n_samples / non_leaf_node.n_samples) * left.gini + \
+                            (right.n_samples / non_leaf_node.n_samples) * right.gini
+        improvement = non_leaf_node.gini - weighted_impurity
+        node_importance = (non_leaf_node.n_samples / total_samples) * improvement
+
+        print(f"Weighted impurity of children: {weighted_impurity:.4f}")
+        print(f"Impurity decrease (improvement): {improvement:.4f}")
+        print(f"Node importance (weighted by sample proportion): {node_importance:.4f}")
+    else:
+        print("No non-trivial node found in the first tree.")
+
+    
+    cm = sklearn_confusion_matrix(Y_ts, prediction)
+    from make_graph import confusion_matrix
+    confusion_matrix(le, cm, Y_ts, prediction, 'iot_classification/graphs', '3')
 
     # tune hyperparameters (uncomment to use)
-    #hyperparameters = tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, le.classes_)
+    #hyperparameters = tune_hyperparameters(X_tr_full, X_ts_full, Y_tr, Y_ts, le.classes_, '6')
     #print('Best hyperparameters: ', hyperparameters)
+    
 
 if __name__ == '__main__':
     # parse cmdline args
