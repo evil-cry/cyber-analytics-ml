@@ -198,6 +198,7 @@ class Data:
         # TODO
         # make a method similar to analyze_columns_debug
         # but change the info to be more presentable + show some percentages
+        # perhaps try to figure out if different data would be more useful than what I have in debug
         pass
 
     def analyze_columns_debug(self):
