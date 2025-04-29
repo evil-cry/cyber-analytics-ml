@@ -10,9 +10,14 @@ Tools Used: ChatGPT (o4-mini)
 Prohibited Use Compliance: Confirmed
 '''
 
+import glob
+import os
+import time
+
 import pandas as pd
 import numpy as np
-import glob
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from pandas import DataFrame
 
@@ -33,7 +38,11 @@ class Model:
             self.X_test = data.X_test_scaled
             self.Y_test = data.Y_test
 
+            start = time.time()
             self._train()
+            end = time.time()
+            self.time = end - start
+
             self.predictions = self._classify()
 
         except (KeyError, AttributeError) as e:
@@ -47,18 +56,29 @@ class Model:
         return self.model.predict(self.X_test)
     
     def evaluate(self, print_report = True):
-        report = classification_report(self.Y_test, self.predictions)
+        self.report = classification_report(self.Y_test, self.predictions)
+        self.confusion_matrix = sklearn_confusion_matrix(self.Y_test, self.predictions)
 
         if print_report:
-            print(f'Evaluating {self.name} - ')
-            print()
-            print(report)
+            print(f'It took {self.time:.2f} seconds to train {self.name}.\n')
 
-            cm = sklearn_confusion_matrix(self.Y_test, self.predictions)
-            print(f'Confusion matrix - \n{cm}')
-            print()
+            print(f'{self.name} Performance Metrics - ')
+            print(f'\n{self.report}\n')
 
-        return report
+            print(f'{self.name} Confusion Matrix - ')
+            print(f'\n{self.confusion_matrix}\n')
+    
+    def draw_confusion_matrix(self):
+        save_path = f'darknet/graphs/{self.name}'
+        os.makedirs(save_path, exist_ok=True)
+        save_path = save_path + '/confusion_matrix.png'
+
+        plt.figure(figsize=(8, 8))
+        sns.heatmap(self.confusion_matrix, annot=True, fmt='d')
+        plt.title(f'{self.name} Confusion Matrix')
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.savefig(save_path)
 
 class Data:
     def __init__(self, filepaths = 'darknet/corpus/parts/*.csv', kwargs = {}):
@@ -175,6 +195,12 @@ class Data:
             print(self.data[column].unique())
 
     def analyze_columns(self):
+        # TODO
+        # make a method similar to analyze_columns_debug
+        # but change the info to be more presentable + show some percentages
+        pass
+
+    def analyze_columns_debug(self):
         '''
         For each column in the dataset, print:
         - data type

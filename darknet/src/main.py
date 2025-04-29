@@ -1,4 +1,5 @@
 import processing 
+import clustering # TODO - use clustering
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
@@ -20,7 +21,7 @@ def main():
     data_kwargs = {}
     data = processing.Data('darknet/corpus/parts/*.csv', data_kwargs)
 
-    # uncomment to analyze columns
+    # TODO - make sure data analysis works
     #data.analyze_columns()
 
     compare_models(data)
