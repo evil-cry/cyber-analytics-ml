@@ -9,22 +9,24 @@ Tools Used: ChatGPT (o4-mini)
 
 Prohibited Use Compliance: Confirmed
 '''
+
 import pandas as pd
 import numpy as np
 import glob
 
 from pandas import DataFrame
 
-from sklearn import feature_extraction, feature_selection
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder, LabelEncoder
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import SelectKBest
+from sklearn.preprocessing import StandardScaler, RobustScaler, LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix as sklearn_confusion_matrix
 
 class Model:
-    def __init__(self, model, data):
+    def __init__(self, model, name, data):
         try:
+            self.name = name
             self.model = model
             self.X_train = data.X_train_scaled
             self.Y_train = data.Y_train
@@ -38,18 +40,24 @@ class Model:
             raise KeyError(f"Data does not contain a required key. Perpahs it's None? - {e}.")
 
     def _train(self):
+        print(f'Training {self.name}...')
         self.model.fit(self.X_train, self.Y_train)
 
     def _classify(self):
         return self.model.predict(self.X_test)
     
-    def evaluate(self):
+    def evaluate(self, print_report = True):
         report = classification_report(self.Y_test, self.predictions)
-        print(report)
 
-        cm = sklearn_confusion_matrix(self.Y_test, self.predictions)
-        print(f'Confusion matrix - \n{cm}')
-        
+        if print_report:
+            print(f'Evaluating {self.name} - ')
+            print()
+            print(report)
+
+            cm = sklearn_confusion_matrix(self.Y_test, self.predictions)
+            print(f'Confusion matrix - \n{cm}')
+            print()
+
         return report
 
 class Data:
@@ -61,6 +69,7 @@ class Data:
 
         self.data: DataFrame = None
         self.kwargs = kwargs
+        self.le = LabelEncoder()
 
         self._read()
         self._extract_features(self.kwargs)
@@ -73,10 +82,12 @@ class Data:
             self.data.columns = self.data.columns.str.lower() # set columns to lowercase for easier access
             self.data = self.data.map(lambda x: str(x).lower() if isinstance(x, str) else x) # set all rows to lowercase if they are strings
 
-            
             self.data['timestamp'] = pd.to_datetime(self.data['timestamp'], format='%d/%m/%Y %I:%M:%S %p') 
             self.data['hour'] = self.data['timestamp'].dt.hour # these are the most useful ones - day of the week and hour of the day. We don't need much else.
             self.data['weekday'] = self.data['timestamp'].dt.weekday
+
+            # one hot encode the protocols - make a separate column for each one
+            self.data = pd.get_dummies(self.data, columns=['protocol'], prefix='protol')
 
             # string ip doesn't give much to the ai - even similar ips would be perceived as fully different enties. 
             # additionally, this split might give the ai more insight into the ip, such as seeing private and public ips.
@@ -85,21 +96,40 @@ class Data:
     
             self.drop_columns([
                 'src ip', 'dst ip', 'timestamp',
-                'flow id', # this column is simply a concat of the next 4 columns
+                'flow id', # this column is simply a concat of the src and dst ip and ports
             ])
 
-            # drop columns with only one unique value
-            self.data = self.data.loc[:, self.data.nunique() > 1]
-
-            # replace infinities with None
-            self.data.replace([np.inf, -np.inf], None, inplace=True)
-            # drop Nones
-            self.data.dropna(inplace=True)
+            self._cleanup()
 
         except FileNotFoundError as e:
             print(f'One of the files was not found - {e}')
             exit()
         
+    def _cleanup(self):
+        '''
+        Cleans the features based on the following generic rules:
+        - drop columns with only one unique value
+        - replace infinities with None
+        - drop Nones
+        - convert data to numeric types if possible
+        '''
+
+        # drop columns with only one unique value
+        self.data = self.data.loc[:, self.data.nunique() > 1]
+        # replace infinities with None
+        self.data.replace([np.inf, -np.inf], None, inplace=True)
+        # drop Nones
+        self.data.dropna(inplace=True)
+
+        # explicitly convert data to correct types
+        for column in self.data.columns:
+
+            # exception-driven programming for the win
+            try:
+                self.data[column] = pd.to_numeric(self.data[column])
+            except ValueError:
+                pass  # if the column is not numeric, skip it
+
     def _extract_features(self, kwargs):
         '''
         Extract features from the dataset.
@@ -113,6 +143,7 @@ class Data:
             X.drop(columns=['family'], axis=1, inplace=True) 
 
         Y = self.data['label']
+        Y = self.le.fit_transform(Y)
 
         maximum_features = kwargs.get('maximum_features', 5000)
         if len(X.columns) > maximum_features:
@@ -124,7 +155,7 @@ class Data:
 
         self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(X, Y, test_size=test_size, random_state=random_state)
 
-        scaler = StandardScaler()
+        scaler = RobustScaler()
         self.X_train_scaled = scaler.fit_transform(self.X_train)
         self.X_test_scaled = scaler.transform(self.X_test)
         
@@ -143,8 +174,7 @@ class Data:
             print(f'Unique values in {column} - ')
             print(self.data[column].unique())
 
-    @staticmethod
-    def analyze_columns(dataframe: DataFrame = None):
+    def analyze_columns(self):
         '''
         For each column in the dataset, print:
         - data type
@@ -153,6 +183,8 @@ class Data:
         - for non-numeric columns, print the number of unique values
         and other useful information that I didn't document here
         '''
+        dataframe = self.data
+
         if not isinstance(dataframe, DataFrame):
             return
         
@@ -183,6 +215,9 @@ class Data:
                     print(f'Unique values: {unique_values}')
 
             print()
+
+            # graphs.plot_histogram('darknet/graphs/preprocessing', self.data, column)
+            # graphs.plot_boxplot('darknet/graphs/preprocessing', self.data, column)
 
         print(f'Columns - {len(dataframe.columns)}')
         print(f'Unique counts - {counts}')
