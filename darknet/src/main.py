@@ -36,14 +36,17 @@ def main():
     # TODO - make sure data analysis works
     # data.analyze_columns()
     
-    '''
+    
     cluster = clustering.Cluster(benign, model_name='kmeans')
-    cluster.fit(n_clusters=8)
+    cluster.fit(n_clusters=3)
     cluster.evaluate()
     cluster.draw()
-    '''
     
-    results = compare_models(data)
+    #results = compare_models(data)
+    #graphs  = comparison_graphs.ComparisonGraphs(results)
+    #graphs.plot_runtime_comparison()
+    
+    #results = compare_models(data)
     #graphs = comparison_graphs.ComparisonGraphs(results)
     #graphs.plot_roc_curves(model_name="Random Forest", class_label=2)
     #graphs.plot_precision_recall_curves(model_name="Random Forest", class_label=2)

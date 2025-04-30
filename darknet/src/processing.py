@@ -213,6 +213,10 @@ class Data:
         self.X_train_scaled = scaler.fit_transform(self.X_train)
         self.X_test_scaled = scaler.transform(self.X_test)
         
+        self.family_le = LabelEncoder()
+        self.label_family = self.family_le.fit_transform(self.data['label'])
+
+        
     def drop_columns(self, columns: list):
         '''
         Drop a column from the dataset

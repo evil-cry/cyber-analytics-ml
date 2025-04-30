@@ -12,11 +12,13 @@ from processing import Data
 class Cluster:
     def __init__(self, data: Data, model_name: str):
         self.data = data
-        self.features = data.X_train_scaled + data.X_test_scaled
+        self.features = np.vstack((data.X_train_scaled, data.X_test_scaled))
+        
+        self.labels = np.concatenate((data.Y_train, data.Y_test))
 
         self.model_name = model_name
 
-        self.clusters = []
+        self.clusters = None
         self.n_clusters = 0
 
         self.silhouette = 0
@@ -24,8 +26,10 @@ class Cluster:
 
     def fit(self, **kwargs):
         if self.model_name == 'kmeans':
+            print("Training kmeans model...")
             n_clusters = kwargs.get('n_clusters', 8)
             self.model = KMeans(n_clusters=n_clusters)
+            self.clusters = self.model.fit_predict(self.features)
         
         elif (self.model_name == 'dbscan'):
             eps = kwargs.get('eps', 0.5)
@@ -48,6 +52,7 @@ class Cluster:
     def draw(self, filepath='darknet/graphs/clusters'):
         """
             Draw graph which visualizes the results of the model
+            Labels each cluster by the majority of traffic in it
         """
         
         filepath = filepath + f'/{self.model_name}/'
@@ -65,8 +70,24 @@ class Cluster:
             mask = (self.clusters == label)
             if label == -1:
                 label_name = 'Noise'
+            elif self.model_name == 'kmeans':
+                # find majority of traffic in cluster
+                #codes = self.labels[mask]
+                #if codes.size > 0:
+                    #majority_code = np.bincount(codes).argmax()
+                    #map code back to family name based on most prevalent traffic in each cluster
+                    #label_name = self.data.le.inverse_transform([majority_code])[0]
+                #else:
+                    #label_name = "Empty"
+                family_codes = self.data.label_family[mask]
+                if family_codes.size > 0:
+                    majority_family = np.bincount(family_codes).argmax()
+                    label_name = self.data.family_le.inverse_transform([majority_family])[0]
+                else:
+                    label_name = "Empty"
             else:
-                label_name = f'Cluster {label}'
+                label_name = f"Cluster {label}"
+                
             plt.scatter(
                 points_2d[mask, 0],
                 points_2d[mask, 1],
@@ -82,3 +103,4 @@ class Cluster:
         plt.legend()
         plt.tight_layout()
         plt.savefig(filepath)
+        plt.close()
