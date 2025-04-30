@@ -45,6 +45,7 @@ def main():
     graphs.plot_roc_curves(model_name="Random Forest", class_label=2)
     graphs.plot_precision_recall_curves(model_name="Random Forest", class_label=2)
     graphs.plot_runtime_comparison()
+    graphs.plot_metric_comparison("accuracy")
 
 if __name__ == "__main__":
     main()

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.preprocessing import label_binarize
 
 class ComparisonGraphs:
@@ -13,6 +14,19 @@ class ComparisonGraphs:
     '''
     def __init__(self, model_results: dict):
         self.results = model_results
+
+    def calculate_metrics(self, y_true, y_pred, y_prob):
+        '''
+        Calculate metrics from raw predicitions
+        '''
+        metrics = {
+            'accuracy': accuracy_score(y_true, y_pred),
+            'precision': precision_score(y_true, y_pred, average='weighted', zero_division=0),
+            'recall': recall_score(y_true, y_pred, average='weighted', zero_division=0),
+            'f1': f1_score(y_true, y_pred, average='weighted', zero_division=0)
+        }
+
+        return metrics
 
     def plot_roc_curves(self, model_name: str = None, class_label=None, save_path: str = "darknet/graphs/roc_curve.png", figsize=(12, 6)):
         '''
@@ -193,10 +207,62 @@ class ComparisonGraphs:
         plt.savefig(save_path)
         plt.show()
 
-    def plot_metric_comparison(self, metric: str):
+    def plot_metric_comparison(self, metric_name: str = None, figsize=(12, 6), save_path: str = "darknet/graphs/metric_comparison.png"):
         '''
-            Input the metric you would like to compare and create a 
-            chart comparing the metric against all models
+        Input the metric you would like to compare and create a 
+        chart comparing the metric against all models
         '''
-        pass
+        plt.figure(figsize=figsize)
     
+        models = []
+        metric_v = []
+
+        for model, metrics in self.results.items():
+            if metric_name == 'train_time' and 'train_time' in self.results:
+                models.append(model)
+                metric_v.append(self.results['train_time'])
+
+            elif 'y_true' in metrics and 'y_pred' in metrics:
+                y_true = np.array(metrics['y_true'])
+                y_pred = np.array(metrics['y_pred'])
+                y_prob = np.array(metrics['y_prob'], None)
+
+                metrics = self.calculate_metrics(y_true, y_pred, y_prob)
+
+                if metric_name in metrics:
+                    models.append(model)
+                    metric_v.append(metrics[metric_name])
+
+                else:
+                    print(f"Metric '{metric_name}' not found for model '{model}'. Skipping...")
+
+            else:
+                print(f"Model '{model}' does not have the required metrics. Skipping...")
+
+        df = pd.DataFrame({
+            'Model': models,
+            metric_name: metric_v
+        })
+
+        df = df.sort_values(by=metric_name, ascending=False)
+
+        sns.set_style("whitegrid")
+
+        ax = sns.barplot(
+            x='Model',
+            y=metric_name,
+            data=df,
+            palette='viridis'
+        )
+
+        plt.title(f"{metric_name.capitalize()} Comparison Across Models")
+        plt.xlabel("Models")
+        plt.ylabel(metric_name.capitalize())
+        plt.xticks(rotation=45)
+        
+        for i, v in enumerate(metric_v):
+            ax.text(i, v + 0.01, f"{v:.2f}", ha='center', fontsize=12)
+
+        plt.tight_layout()
+        plt.savefig(save_path)
+        plt.show()
