@@ -46,7 +46,7 @@ class Model:
             self.predictions = self._classify()
 
         except (KeyError, AttributeError) as e:
-            raise KeyError(f"Data does not contain a required key. Perpahs it's None? - {e}.")
+            raise KeyError(f"Data does not contain a required key. Perhaphs it's None? - {e}.")
 
     def _train(self):
         print(f'Training {self.name}...')
@@ -175,7 +175,7 @@ class Data:
 
         self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(X, Y, test_size=test_size, random_state=random_state)
 
-        scaler = RobustScaler()
+        scaler = StandardScaler()
         self.X_train_scaled = scaler.fit_transform(self.X_train)
         self.X_test_scaled = scaler.transform(self.X_test)
         
@@ -195,11 +195,46 @@ class Data:
             print(self.data[column].unique())
 
     def analyze_columns(self):
-        # TODO
-        # make a method similar to analyze_columns_debug
-        # but change the info to be more presentable + show some percentages
-        # perhaps try to figure out if different data would be more useful than what I have in debug
-        pass
+        """
+        Print a presentable summary of each column:
+          - Data type and unique count
+          - Numeric stats (mean, median, std, min, max, percentiles)
+          - Top categories with percentages for non-numeric
+        """
+        df = self.data
+        n_rows = len(df)
+        print(f"=== Dataset Summary: {n_rows} samples, {df.shape[1]} columns ===\n")
+
+        for col in df.columns:
+            series = df[col]
+            dtype = series.dtype
+            nunique = series.nunique(dropna=False)
+            print(f"Column: {col!r} ({dtype}) — {nunique} unique")
+
+            if np.issubdtype(dtype, np.number):
+                # Numeric summary
+                mean = series.mean()
+                median = series.median()
+                std = series.std()
+                minimum = series.min()
+                maximum = series.max()
+                q25, q50, q75 = series.quantile([0.25, 0.5, 0.75])
+                print(f"  • mean={mean:.3f}, median={median:.3f}, std={std:.3f}")
+                print(f"  • range=[{minimum:.3f} → {maximum:.3f}]")
+                print(f"  • 25%={q25:.3f}, 50%={q50:.3f}, 75%={q75:.3f}")
+
+            else:
+                # Top 5 values
+                counts = series.value_counts(dropna=False)
+                top5 = counts.iloc[:5]
+                for val, cnt in top5.items():
+                    pct = cnt / n_rows * 100
+                    val_label = '<NaN>' if pd.isna(val) else val
+                    print(f"  • {val_label!r}: {cnt} ({pct:.2f}%)")
+                if nunique > 5:
+                    print(f"  • ... and {nunique - 5} more unique values")
+
+            print() 
 
     def analyze_columns_debug(self):
         '''

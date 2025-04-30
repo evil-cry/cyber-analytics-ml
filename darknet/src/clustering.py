@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import silhouette_score, calinski_harabasz_score
+from sklearn.decomposition import PCA
 
 from processing import Data
 
@@ -43,5 +44,35 @@ class Cluster:
             self.calinski = 0
 
     def draw(self):
-        # TODO - draw cluster plots
-        pass
+        """
+            Draw graph which visualizes the results of the model
+        """
+        
+        # Reduce the number of components to 2 so it is 2D
+        pca = PCA(n_components=2)
+        points_2d = pca.fit_transform(self.features)
+        
+        # Plot each cluster
+        plt.figure(figsize=(8, 6))
+        unique_labels = np.unique(self.clusters)
+        for label in unique_labels:
+            mask = (self.clusters == label)
+            if label == -1:
+                label_name = 'Noise'
+            else:
+                label_name = f'Cluster {label}'
+            plt.scatter(
+                points_2d[mask, 0],
+                points_2d[mask, 1],
+                s=30,
+                alpha=0.6,
+                label=label_name
+            )
+            
+        # Make it nice looking
+        plt.title(f'{self.model_name.capitalize()} Cluster Plot ({self.n_clusters} clusters)')
+        plt.xlabel('PC1')
+        plt.ylabel('PC2')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
