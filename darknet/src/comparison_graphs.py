@@ -88,7 +88,7 @@ class ComparisonGraphs:
         '''
         Generate the precison and recall curves of the model
         '''
-        
+
         print("Plotting Precision-Recall curves...")
         plt.figure(figsize=figsize)
     
@@ -158,11 +158,40 @@ class ComparisonGraphs:
         plt.savefig(save_path)
         plt.show()
         
-    def plot_runtime_comparison(self):
+    def plot_runtime_comparison(self, figsize=(12, 6), save_path="darknet/graphs/runtime_comparison.png"):  
         '''
-            Bar chart comparing the training times of each model
+        Bar chart comparing the training times of each model
         '''
-        pass
+        print("Plotting runtime comparison...")
+
+        plt.figure(figsize=figsize)
+
+        models = list(self.results.keys())
+        times = [self.results[m]['train_time'] for m in models]
+
+        colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c']
+        bars = plt.bar(models, times, color=colors[:len(models)], edgecolor='black', linewidth=1.2)
+
+        # Add time values as text on top of bars
+        for i, (bar, time_val) in enumerate(zip(bars, times)):
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2, height + max(times)*0.02,
+                    f'{time_val:.4f}s', ha='center', va='bottom', 
+                    fontweight='bold', fontsize=10)
+        
+        # Add grid lines for better readability
+        plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+        
+        # Adjust y-axis for text labels
+        plt.ylim(0, max(times) * 1.15)
+        plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
+
+        plt.xlabel("Models")
+        plt.ylabel("Training Time (seconds)")
+        plt.title("Model Training Time Comparison")
+        plt.tight_layout()
+        plt.savefig(save_path)
+        plt.show()
 
     def plot_metric_comparison(self, metric: str):
         '''
