@@ -33,17 +33,17 @@ def main():
     data = processing.Data('darknet/corpus/parts/*.csv', data_kwargs)
 
     # TODO - make sure data analysis works
-    data.analyze_columns()
+    # data.analyze_columns()
     
-    cluster = clustering.Cluster(data, model_name='kmeans')
-    cluster.fit(n_clusters=4)
-    cluster.evaluate()
-    cluster.draw()
+    # cluster = clustering.Cluster(data, model_name='kmeans')
+    # cluster.fit(n_clusters=4)
+    # cluster.evaluate()
+    # cluster.draw()
 
     results = compare_models(data)
     graphs = comparison_graphs.ComparisonGraphs(results)
     graphs.plot_roc_curves(model_name="Random Forest", class_label=2)
-    
+    graphs.plot_precision_recall_curves(model_name="Random Forest", class_label=2)
 
 if __name__ == "__main__":
     main()
