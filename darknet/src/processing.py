@@ -102,6 +102,9 @@ class Data:
             self.data.columns = self.data.columns.str.lower() # set columns to lowercase for easier access
             self.data = self.data.map(lambda x: str(x).lower() if isinstance(x, str) else x) # set all rows to lowercase if they are strings
 
+            # change non-vpn and non-tor to benign
+            self.data['label'] = self.data['label'].apply(lambda x: x if x in ['vpn', 'tor'] else 'benign')
+
             self.data['timestamp'] = pd.to_datetime(self.data['timestamp'], format='%d/%m/%Y %I:%M:%S %p') 
             self.data['hour'] = self.data['timestamp'].dt.hour # these are the most useful ones - day of the week and hour of the day. We don't need much else.
             self.data['weekday'] = self.data['timestamp'].dt.weekday
@@ -120,6 +123,18 @@ class Data:
             ])
 
             self._cleanup()
+
+            self.benign = self.data.copy(deep=True)
+            self.vpn = self.data.copy(deep=True)
+            self.tor = self.data.copy(deep=True)
+
+            self.benign[self.benign['label'] == 'benign']
+            self.vpn[self.vpn['label'] == 'vpn']
+            self.tor[self.tor['label'] == 'tor']
+
+            self.benign.drop(columns=['label'], axis=1, inplace=True)
+            self.vpn.drop(columns=['label'], axis=1, inplace=True)
+            self.tor.drop(columns=['label'], axis=1, inplace=True)
 
         except FileNotFoundError as e:
             print(f'One of the files was not found - {e}')
@@ -158,12 +173,31 @@ class Data:
         if not isinstance(self.data, DataFrame):
             return None
         
-        X = self.data.drop(columns=['label'], axis=1)
-        if not kwargs.get('include_families', False):
+        classify_families = kwargs.get('classify_families', False)
+        
+        if not classify_families:
+            X = self.data.drop(columns=['label'], axis=1)
             X.drop(columns=['family'], axis=1, inplace=True) 
 
-        Y = self.data['label']
-        Y = self.le.fit_transform(Y)
+            Y = self.data['label']
+            Y = self.le.fit_transform(Y)
+        else:
+            label = kwargs.get('label', 'benign')
+
+            if label == 'benign':
+                X = self.benign
+                Y = self.benign['family']
+                
+            elif label == 'vpn':
+                X = self.vpn
+                Y = self.vpn['family']
+
+            elif label == 'tor':
+                X = self.tor
+                Y = self.tor['family']
+
+            X.drop(columns=['family'], axis=1, inplace=True)
+            Y = self.le.fit_transform(Y)
 
         maximum_features = kwargs.get('maximum_features', 5000)
         if len(X.columns) > maximum_features:

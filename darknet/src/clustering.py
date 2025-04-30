@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,7 +12,7 @@ from processing import Data
 class Cluster:
     def __init__(self, data: Data, model_name: str):
         self.data = data
-        self.features = data.X_train_scaled 
+        self.features = data.X_train_scaled + data.X_test_scaled
 
         self.model_name = model_name
 
@@ -43,11 +45,15 @@ class Cluster:
             self.silhouette = 0
             self.calinski = 0
 
-    def draw(self):
+    def draw(self, filepath='darknet/graphs/clusters'):
         """
             Draw graph which visualizes the results of the model
         """
         
+        filepath = filepath + f'/{self.model_name}/'
+        os.makedirs(filepath, exist_ok=True)
+        filepath = filepath + f'{str(self.n_clusters)}.png'
+
         # Reduce the number of components to 2 so it is 2D
         pca = PCA(n_components=2)
         points_2d = pca.fit_transform(self.features)
@@ -75,4 +81,4 @@ class Cluster:
         plt.ylabel('PC2')
         plt.legend()
         plt.tight_layout()
-        plt.show()
+        plt.savefig(filepath)

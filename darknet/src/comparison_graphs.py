@@ -96,7 +96,6 @@ class ComparisonGraphs:
         plt.grid(True)
         plt.tight_layout()
         plt.savefig(save_path)
-        plt.show()
         
     def plot_precision_recall_curves(self, model_name: str = None, class_label=None, save_path: str = "darknet/graphs/precision_recall_curve.png", figsize=(12, 6)):
         '''
@@ -170,7 +169,6 @@ class ComparisonGraphs:
         plt.grid(True)
         plt.tight_layout()
         plt.savefig(save_path)
-        plt.show()
         
     def plot_runtime_comparison(self, figsize=(12, 6), save_path="darknet/graphs/runtime_comparison.png"):  
         '''
@@ -205,7 +203,6 @@ class ComparisonGraphs:
         plt.title("Model Training Time Comparison")
         plt.tight_layout()
         plt.savefig(save_path)
-        plt.show()
 
     def plot_metric_comparison(self, metric_name: str = None, figsize=(12, 6), save_path: str = "darknet/graphs/metric_comparison.png"):
         '''
@@ -265,4 +262,3 @@ class ComparisonGraphs:
 
         plt.tight_layout()
         plt.savefig(save_path)
-        plt.show()
