@@ -298,8 +298,18 @@ class ComparisonGraphs:
                 metrics = self.calculate_metrics(y_true, y_pred, y_prob)
 
                 if metric_name in metrics:
+                    metric_value = metrics[metric_name]
+
+                    if isinstance(metric_value, dict):
+                        try:
+                            metric_value = sum(metric_value.values()) / len(metric_value)
+
+                        except Exception as e:
+                            print(f"Failed to aggregate metric '{metric_name}' for model '{model}': {e}. Skipping...")
+                            continue
+
                     models.append(model)
-                    metric_v.append(metrics[metric_name])
+                    metric_v.append(metric_value)
 
                 else:
                     print(f"Metric '{metric_name}' not found for model '{model}'. Skipping...")
