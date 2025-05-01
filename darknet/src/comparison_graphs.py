@@ -47,7 +47,7 @@ class ComparisonGraphs:
 
         return metrics
 
-    def plot_confusion_matrix(self, model_name: str = None, figsize=(12, 6)):
+    def plot_confusion_matrix(self, model_name: str = None, figsize=(12, 12), decoder = None):
         '''
         Plot confusion matrix for a single model and single class (if specified),
         or all models + micro-average if no args given.
@@ -65,29 +65,26 @@ class ComparisonGraphs:
             result = self.results[model]
             y_true = np.array(result['y_true'])
             y_pred = np.array(result['y_pred'])
-            classes = np.unique(y_true)
-
-            # binary vs multiclass switch
-            if y_pred.ndim == 1 or y_pred.shape[1] == 1:
-                # binary classification
-                cm = confusion_matrix(y_true, y_pred)
-                sns.heatmap(cm, annot=True, fmt='d', cmap='inferno', cbar=False)
-                plt.title(f"Confusion Matrix for {model}", color='white')
-                plt.xlabel("Predicted", color='white')
-                plt.ylabel("True", color='white')
-                plt.xticks(ticks=[0.5, 1.5], labels=['Benign', 'Malware'], rotation=0, color='white')
-                plt.yticks(ticks=[0.5, 1.5], labels=['Benign', 'Malware'], rotation=0, color='white')
-            
+            # Get unique encoded classes
+            unique_codes = np.unique(y_true)
+            # Decode labels if a decoder function is provided
+            if decoder is not None:
+                classes = decoder(unique_codes)
             else:
-                # multiclass classification
-                cm = confusion_matrix(y_true, y_pred)
-                sns.heatmap(cm, annot=True, fmt='d', cmap='inferno', cbar=False)
-                plt.title(f"Confusion Matrix for {model}", color='white')
-                plt.xlabel("Predicted", color='white')
-                plt.ylabel("True", color='white')
-                plt.xticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=45, color='white')
-                plt.yticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0, color='white')
+                classes = unique_codes
 
+            cm = confusion_matrix(y_true, y_pred)
+            
+            if model == 'Random Forest':
+                model = 'RF' 
+
+            sns.heatmap(cm, annot=True, fmt='d', cmap='inferno', cbar=False)
+            plt.title(f"Confusion Matrix for {model}", color='white')
+            plt.xlabel("Predicted", color='white')
+            plt.ylabel("True", color='white')
+            plt.xticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0, color='white')
+            plt.yticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0, color='white')
+    
             plt.tight_layout()
             plt.savefig(f"darknet/graphs/{model}_confusion_matrix.png", facecolor='black', edgecolor='none')
             plt.close()
@@ -110,7 +107,7 @@ class ComparisonGraphs:
         if model_name in self.results:
             models = [model_name]
         else:
-            self.results.keys()
+            models = list(self.results.keys())
         
         for m in models:
             result = self.results[m]

@@ -239,6 +239,8 @@ class Data:
 
         return X_train_scaled, X_test_scaled, self.Y_train, self.Y_test
         
+    def decode_labels(self, labels):
+        return self.le.inverse_transform(labels)
         
     def drop_columns(self, columns: list):
         '''

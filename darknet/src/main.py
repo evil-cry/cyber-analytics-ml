@@ -63,7 +63,7 @@ def main():
     graphs.plot_roc_curves(model_name="Random Forest", class_label=2)
     graphs.plot_precision_recall_curves(model_name="Random Forest", class_label=2)
     graphs.plot_runtime_comparison()
-    graphs.plot_confusion_matrix()
+    graphs.plot_confusion_matrix(decoder=data.decode_labels)
     graphs.plot_metric_comparison("accuracy")
     graphs.plot_metric_comparison("accuracy")
     graphs.plot_metric_comparison("precision")
