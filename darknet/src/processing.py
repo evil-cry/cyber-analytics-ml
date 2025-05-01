@@ -38,7 +38,7 @@ class Model:
             self.X_train, self.X_test, self.Y_train, self.Y_test = data.set_get_X_Y(
                 kwargs.get('what_to_classify', 'class'),
                 kwargs.get('scaler', StandardScaler()),
-                kwargs.get('max_samples', 5000)
+                kwargs.get('max_samples', -1)
             )
 
             start = time.time()
@@ -175,7 +175,7 @@ class Data:
             except ValueError:
                 pass  # if the column is not numeric, skip it
 
-    def _extract_features(self, what_to_classify: str = 'class', scaler = StandardScaler(), max_samples = 5000):
+    def _extract_features(self, what_to_classify: str = 'class', scaler = StandardScaler(), max_samples = -1):
         '''
         Extract features from the dataset.
         '''
@@ -183,7 +183,7 @@ class Data:
         if not isinstance(self.data, DataFrame):
             return None
         
-        if max_samples > 0 and what_to_classify == 'class':
+        if max_samples != -1 and what_to_classify == 'class':
             # get the labels
             self.data = self.data.groupby('label').apply(
                 # sample up to max_samples
@@ -218,7 +218,7 @@ class Data:
 
         self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(X, Y, test_size=test_size, random_state=random_state)
 
-    def set_get_X_Y(self, what_to_classify: str = 'class', scaler = StandardScaler(), max_samples = 0):
+    def set_get_X_Y(self, what_to_classify: str = 'class', scaler = StandardScaler(), max_samples = -1):
         '''
         get the X and Y lists for training
         what_to_classify - if class, classify labels, if benign; vpn; or tor, classify families of said class
