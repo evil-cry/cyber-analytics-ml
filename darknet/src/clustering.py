@@ -15,6 +15,15 @@ class Cluster:
         self.kwargs = kwargs
         self.model_name = model_name
 
+        what_to_classify = kwargs.get('what_to_classify', 'class')
+        self.X_train, self.X_test, self.Y_train, self.Y_test = data.set_get_X_Y(
+            what_to_classify=what_to_classify,
+            max_samples=kwargs.get('max_samples', 0)
+        )
+
+        self.features = np.vstack((data.X_train_scaled, data.X_test_scaled))
+        self.labels = np.concatenate((self.Y_train, self.Y_test))
+
         self.clusters = None
         self.n_clusters = 0
 
@@ -69,9 +78,7 @@ class Cluster:
         unique_labels = np.unique(self.clusters)
         used_labels = []
 
-        i = -1
-        for label in unique_labels:
-            i += 1
+        for i, label in enumerate(unique_labels):
             mask = (self.clusters == label)
 
             if label == -1:
