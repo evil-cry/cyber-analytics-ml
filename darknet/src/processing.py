@@ -93,9 +93,7 @@ class Data:
         self.data: DataFrame = None
         self.kwargs = kwargs
 
-        # french tutorial
-        self.le_classes = LabelEncoder()
-        self.le_families = LabelEncoder()
+        self.le = LabelEncoder()
 
         self._read()
         self._extract_features(self.kwargs)
@@ -184,59 +182,50 @@ class Data:
         if not isinstance(self.data, DataFrame):
             return None
         
-        # the data is very lightweight, so we can store everything in memory
-        X_labels = self.data.drop(columns=['label'], axis=1)
-        X_labels.drop(columns=['family'], axis=1, inplace=True) 
+        if what_to_classify == 'class':
+            X = self.data.drop(columns=['label'], axis=1)
+            X.drop(columns=['family'], axis=1, inplace=True) 
+            Y = self.data['label']
+            Y = self.le.fit_transform(Y)
 
-        X_benign = self.benign
-        X_benign.drop(columns=['family'], axis=1, inplace=True)
-        X_vpn = self.vpn
-        X_vpn.drop(columns=['family'], axis=1, inplace=True)
-        X_tor = self.tor
-        X_tor.drop(columns=['family'], axis=1, inplace=True)
+        elif what_to_classify == 'benign':
+            X_benign = self.benign
+            X_benign.drop(columns=['family'], axis=1, inplace=True)
+            
 
-        # I have the same question
-        Y_classes = self.data['label']
-        Y_classes = self.le_classes.fit_transform(Y_classes)
-        Y_families = self.benign['family']
-        Y_families = self.le_classes.fit_transform(Y_families)
+        elif what_to_classify == 'vpn' or what_to_classify == 'tor': 
+            Y = self.benign['family']
+            Y = self.le.fit_transform(Y)
+
+            if what_to_classify == 'vpn':
+                X = self.vpn
+                X.drop(columns=['family'], axis=1, inplace=True)
+
+            elif what_to_classify == 'tor':
+                X = self.tor
+                X.drop(columns=['family'], axis=1, inplace=True)
 
         test_size = self.kwargs.get('test_size', 0.3)
         random_state = self.kwargs.get('random_state', 228)
 
-        self.X_train_classes, self.X_test_classes, self.Y_train_classes, self.Y_test_classes = train_test_split(X_labels, Y_families, test_size=test_size, random_state=random_state)
-        self.X_train_benign, self.X_test_benign, self.Y_train_benign, self.Y_test_benign = train_test_split(X_benign, Y_families, test_size=test_size, random_state=random_state)
-        self.X_train_vpn, self.X_test_vpn, self.Y_train_vpn, self.Y_test_vpn = train_test_split(X_vpn, Y_families, test_size=test_size, random_state=random_state)
-        self.X_train_tor, self.X_test_tor, self.Y_train_tor, self.Y_test_tor = train_test_split(X_tor, Y_families, test_size=test_size, random_state=random_state)
+        self.X_train, self.X_test_classes, self.Y_train_classes, self.Y_test_classes = train_test_split(X, Y, test_size=test_size, random_state=random_state)
 
-    def get_X_and_Y(self, what_to_classify: str = 'class', scaler = StandardScaler()):
+    def set_get_X_Y(self, what_to_classify: str = 'class', scaler = StandardScaler()):
         '''
         get the X and Y lists for training
         what_to_classify - if class, classify labels, if benign; vpn; or tor, classify families of said class
-        scaler - what scaler to use
+        scaler - what scaler to use. None for no scaling
         '''
+        self._extract_features(what_to_classify, scaler)
 
-        if what_to_classify == 'class':
-            X_train = self.X_train_classes
-            X_test = self.X_test_classes
-            Y_train = self.Y_train_classes
-            Y_test = self.Y_test_classes
-            
-        elif class_or_family == 'family':
-            X_train = self.X_train_families
-            X_test = self.X_test_families
-            Y_train = self.Y_train_families
-            Y_test = self.Y_test_families
-        else:
-            raise ValueError('class_or_family must be "class" or "family"')
+        if scaler:
+            try:
+                X_train_scaled = scaler.fit_transform(self.X_train)
+                X_test_scaled = scaler.transform(self.X_test)
+            except AttributeError as e:
+                raise AttributeError(f'Scaler must be a sklearn scaler class - {e}')
 
-        try:
-            X_train_scaled = scaler.fit_transform(X_train)
-            X_test_scaled = scaler.transform(X_test)
-        except AttributeError as e:
-            raise AttributeError(f'Scaler must be a sklearn scaler class - {e}')
-
-        return X_train_scaled, X_test_scaled, Y_train, Y_test
+        return X_train_scaled, X_test_scaled, self.Y_train, self.Y_test
         
         
     def drop_columns(self, columns: list):
