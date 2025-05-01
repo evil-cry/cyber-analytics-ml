@@ -2,6 +2,7 @@ import processing
 import comparison_graphs
 import clustering # TODO - use clustering
 
+from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier
 from sklearn.svm import SVC
@@ -11,12 +12,17 @@ def compare_models(data):
     models = {
         'Random Forest': RandomForestClassifier(),
         'KNN': KNeighborsClassifier(),
+        'SVM': SVC(),
         'OvO Random Forest': OneVsOneClassifier(RandomForestClassifier(), -1),
         'OvA Random Forest': OneVsRestClassifier(RandomForestClassifier(), -1),
     }
 
     model_kwargs = {
-        
+        'Random Forest': {'scaler': RobustScaler()},
+        'KNN': {'scaler': RobustScaler()},
+        'SVM': {'scaler': StandardScaler()},
+        'OvO Random Forest': {},
+        'OvA Random Forest': {},
     }
     
     results = {}
@@ -42,9 +48,13 @@ def main():
     # TODO - make sure data analysis works
     data.analyze_columns()
     
-    
-    cluster = clustering.Cluster(data, model_name='kmeans')
+    cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'class'})
     cluster.fit(n_clusters=3)
+    cluster.evaluate()
+    cluster.draw()
+
+    cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'benign'})
+    cluster.fit(n_clusters=8)
     cluster.evaluate()
     cluster.draw()
     

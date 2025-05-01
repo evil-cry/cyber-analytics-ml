@@ -33,13 +33,12 @@ class Model:
         try:
             self.name = name
             self.model = model
-
-            self.X_train = data.X_train_scaled
-            self.Y_train = data.Y_train
-            self.X_test = data.X_test_scaled
-            self.Y_test = data.Y_test
-
             self.kwargs = kwargs
+
+            self.X_train, self.Y_train, self.X_test, self.Y_test = data.set_get_X_Y(
+                kwargs.get('what_to_classify', 'class'),
+                kwargs.get('scaler', StandardScaler())
+            )
 
             start = time.time()
             self._train()
@@ -96,7 +95,6 @@ class Data:
         self.le = LabelEncoder()
 
         self._read()
-        self._extract_features(self.kwargs)
 
     def _read(self):
         try:
@@ -104,7 +102,8 @@ class Data:
             self.data = pd.concat(dataframes, ignore_index=True)
 
             # non-tor and non-vpn traffic are the same
-            df = df[df['label'] != 'non-tor']
+            # use capital L because it isn't lowercased yet
+            self.data = self.data[self.data['Label'] != 'non-tor']
             self.data.drop_duplicates(inplace=True) # drop duplicates just in case
 
             self.data.columns = self.data.columns.str.lower() # set columns to lowercase for easier access
@@ -225,6 +224,9 @@ class Data:
             except AttributeError as e:
                 raise AttributeError(f'Scaler must be a sklearn scaler class - {e}')
 
+        self.X_train_scaled = X_train_scaled
+        self.X_test_scaled = X_test_scaled
+        
         return X_train_scaled, X_test_scaled, self.Y_train, self.Y_test
         
         
@@ -252,7 +254,13 @@ class Data:
         """
         df = self.data
         n_rows = len(df)
-        print(f"=== Dataset Summary: {n_rows} samples, {df.shape[1]} columns ===\n")
+        benign = df[df['label'] == 'benign']
+        vpn = df[df['label'] == 'vpn']
+        tor = df[df['label'] == 'tor']
+
+        print('=== Dataset Summary ===')
+        print(f'{n_rows} samples: {benign} benign, {vpn} vpn, {tor} tor. {df.shape[1]} columns.\n')
+        print()
 
         for col in df.columns:
             series = df[col]
@@ -280,8 +288,8 @@ class Data:
                     pct = cnt / n_rows * 100
                     val_label = '<NaN>' if pd.isna(val) else val
                     print(f"  • {val_label!r}: {cnt} ({pct:.2f}%)")
-                if nunique > 5:
-                    print(f"  • ... and {nunique - 5} more unique values")
+                if nunique > 8:
+                    print(f"  • ... and {nunique - 8} more unique values")
 
             print() 
 

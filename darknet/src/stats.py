@@ -38,7 +38,7 @@ class NetworkTrafficVisualizer:
         print("Plotting correlation matrix...")
 
         plt.style.use('dark_background')
-        plt.figure(figsize=(14, 12), facecolor='black')
+        plt.figure(figsize=(12, 12), facecolor='black')
 
         # Select top N features by variance
         df = self.data.copy()[self.cols]
@@ -242,13 +242,53 @@ class NetworkTrafficVisualizer:
             plt.show()
             plt.style.use('default')
 
+    def plot_class_piechart(self, label: str = 'label'):
+        '''
+        Plot a pie chart showing the distribution of traffic classes.
+        @param label: label parameter. Can be 'label', 'benign', 'vpn' or 'tor'.
+        '''
+
+        if label not in ['label', 'benign', 'vpn', 'tor']:
+            raise ValueError('Label must be label, benign, vpn or tor.')
+
+        if label in self.data.columns:
+            plt.style.use('dark_background')
+            plt.figure(figsize=(10, 8), facecolor='black')
+            
+            # Get class counts and calculate percentages
+            if label == 'label':
+                class_counts = self.data['label'].value_counts()
+            else:
+                class_counts = self.data['family'].value_counts()
+            
+            # Create pie chart
+            plt.pie(class_counts.values, 
+                    labels=class_counts.index,
+                    autopct='%1.1f%%',
+                    colors=plt.cm.Set3.colors,
+                    startangle=90)
+            
+            plt.title(f'Distribution of {label if label in ['benign', 'vpn', 'tor'] else 'all'} samples', color='white', pad=20)
+            
+            # Equal aspect ratio ensures that pie is drawn as a circle
+            plt.axis('equal')
+            
+            plt.tight_layout()
+            plt.savefig(f'darknet/graphs/{label if label in ['benign', 'vpn', 'tor'] else 'all'}_distribution.png', facecolor='black')
+            plt.show()
+            plt.style.use('default')
+
 def main():
     visualizer = NetworkTrafficVisualizer()
-    # visualizer.plot_correlation_matrix(n_features=20)
-    # # visualizer.plot_feature_distribution(n_features=5)
-    # visualizer.plot_protocol_distribution()
-    # visualizer.plot_network_graph(max_edges=100)
-    #visualizer.plot_port_heatmap()
+    visualizer.plot_correlation_matrix(n_features=20)
+    visualizer.plot_feature_distribution(n_features=5)
+    visualizer.plot_protocol_distribution()
+    visualizer.plot_network_graph(max_edges=100)
+    visualizer.plot_port_heatmap()
+    visualizer.plot_class_piechart(label='label')
+    visualizer.plot_class_piechart(label='benign')
+    visualizer.plot_class_piechart(label='vpn')
+    visualizer.plot_class_piechart(label='tor')
 
 if __name__ == "__main__":
     main()

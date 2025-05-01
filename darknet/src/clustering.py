@@ -12,6 +12,11 @@ from processing import Data
 class Cluster:
     def __init__(self, data: Data, model_name: str, **kwargs):
         self.data = data
+
+        self.X_train, self.Y_train, self.X_test, self.Y_test = data.set_get_X_Y(
+            kwargs.get('what_to_classify', 'class'),
+        )
+
         self.features = np.vstack((data.X_train_scaled, data.X_test_scaled))
         
         self.labels = np.concatenate((data.Y_train, data.Y_test))
@@ -64,7 +69,7 @@ class Cluster:
         points_2d = pca.fit_transform(self.features)
         
         # Plot each cluster
-        plt.figure(figsize=(8, 6))
+        plt.figure(figsize=(8, 8))
         unique_labels = np.unique(self.clusters)
         for label in unique_labels:
             mask = (self.clusters == label)
@@ -72,19 +77,21 @@ class Cluster:
                 label_name = 'Noise'
             elif self.model_name == 'kmeans':
                 # find majority of traffic in cluster
-                #codes = self.labels[mask]
-                #if codes.size > 0:
-                    #majority_code = np.bincount(codes).argmax()
-                    #map code back to family name based on most prevalent traffic in each cluster
-                    #label_name = self.data.le.inverse_transform([majority_code])[0]
-                #else:
-                    #label_name = "Empty"
+                codes = self.labels[mask] 
+                if codes.size > 0:
+                    majority_code = np.bincount(codes).argmax()
+                    # map code back to family name based on most prevalent traffic in each cluster
+                    label_name = self.data.le.inverse_transform([majority_code])[0]
+                else:
+                    label_name = "Empty"
+                '''
                 family_codes = self.data.label_family[mask]
                 if family_codes.size > 0:
                     majority_family = np.bincount(family_codes).argmax()
                     label_name = self.data.family_le.inverse_transform([majority_family])[0]
                 else:
                     label_name = "Empty"
+                '''
             else:
                 label_name = f"Cluster {label}"
                 
@@ -98,8 +105,8 @@ class Cluster:
             
         # Make it nice looking
         plt.title(f'{self.model_name.capitalize()} Cluster Plot ({self.n_clusters} clusters)')
-        plt.xlabel('PC1')
-        plt.ylabel('PC2')
+        plt.xlabel('Principal Component 1')
+        plt.ylabel('Principal Component 2')
         plt.legend()
         plt.tight_layout()
         plt.savefig(filepath)
