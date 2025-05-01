@@ -34,7 +34,7 @@ def compare_models(data):
         results[name] = {
             'y_true': data.Y_test,
             'y_pred': clf.predictions,
-            'y_prob': model.y_prob,
+            'y_prob': clf.y_prob,
             'train_time': clf.time
         }
         
