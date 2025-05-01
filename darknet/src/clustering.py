@@ -10,7 +10,7 @@ from sklearn.decomposition import PCA
 from processing import Data
 
 class Cluster:
-    def __init__(self, data: Data, model_name: str):
+    def __init__(self, data: Data, model_name: str, **kwargs):
         self.data = data
         self.features = np.vstack((data.X_train_scaled, data.X_test_scaled))
         

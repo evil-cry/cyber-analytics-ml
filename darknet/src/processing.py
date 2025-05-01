@@ -4,7 +4,7 @@ Tools Used: ChatGPT (o4-mini)
 - Usage: Discussing ideas for encoding each column of the dataset.
 - Verification: No code was given to me by the AI. All the ideas were bounced around and verified against my knowledge of the course material.
 
-- Usage: Minor help with DataFrame reading and manipulation.
+- Usage: Help with DataFrame reading and manipulation.
 - Verification: pandas and glob documentation
 
 Prohibited Use Compliance: Confirmed
@@ -29,14 +29,17 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix as sklearn_confusion_matrix
 
 class Model:
-    def __init__(self, model, name, data):
+    def __init__(self, model, name, data, kwargs):
         try:
             self.name = name
             self.model = model
+
             self.X_train = data.X_train_scaled
             self.Y_train = data.Y_train
             self.X_test = data.X_test_scaled
             self.Y_test = data.Y_test
+
+            self.kwargs = kwargs
 
             start = time.time()
             self._train()
@@ -89,7 +92,10 @@ class Data:
 
         self.data: DataFrame = None
         self.kwargs = kwargs
-        self.le = LabelEncoder()
+
+        # french tutorial
+        self.le_classes = LabelEncoder()
+        self.le_families = LabelEncoder()
 
         self._read()
         self._extract_features(self.kwargs)
@@ -99,10 +105,15 @@ class Data:
             dataframes = [pd.read_csv(fp, delimiter=',') for fp in self.glob]
             self.data = pd.concat(dataframes, ignore_index=True)
 
+            # non-tor and non-vpn traffic are the same
+            df = df[df['label'] != 'non-tor']
+            self.data.drop_duplicates(inplace=True) # drop duplicates just in case
+
             self.data.columns = self.data.columns.str.lower() # set columns to lowercase for easier access
             self.data = self.data.map(lambda x: str(x).lower() if isinstance(x, str) else x) # set all rows to lowercase if they are strings
 
             # change non-vpn and non-tor to benign
+            # yes, non-tor doesn't exist anymore. yes, I wrote this comment instead of changing that.
             self.data['label'] = self.data['label'].apply(lambda x: x if x in ['vpn', 'tor'] else 'benign')
 
             self.data['timestamp'] = pd.to_datetime(self.data['timestamp'], format='%d/%m/%Y %I:%M:%S %p') 
@@ -165,7 +176,7 @@ class Data:
             except ValueError:
                 pass  # if the column is not numeric, skip it
 
-    def _extract_features(self, kwargs):
+    def _extract_features(self, what_to_classify: str = 'class', scaler = StandardScaler()):
         '''
         Extract features from the dataset.
         '''
@@ -173,49 +184,60 @@ class Data:
         if not isinstance(self.data, DataFrame):
             return None
         
-        classify_families = kwargs.get('classify_families', False)
-        
-        if not classify_families:
-            X = self.data.drop(columns=['label'], axis=1)
-            X.drop(columns=['family'], axis=1, inplace=True) 
+        # the data is very lightweight, so we can store everything in memory
+        X_labels = self.data.drop(columns=['label'], axis=1)
+        X_labels.drop(columns=['family'], axis=1, inplace=True) 
 
-            Y = self.data['label']
-            Y = self.le.fit_transform(Y)
+        X_benign = self.benign
+        X_benign.drop(columns=['family'], axis=1, inplace=True)
+        X_vpn = self.vpn
+        X_vpn.drop(columns=['family'], axis=1, inplace=True)
+        X_tor = self.tor
+        X_tor.drop(columns=['family'], axis=1, inplace=True)
+
+        # I have the same question
+        Y_classes = self.data['label']
+        Y_classes = self.le_classes.fit_transform(Y_classes)
+        Y_families = self.benign['family']
+        Y_families = self.le_classes.fit_transform(Y_families)
+
+        test_size = self.kwargs.get('test_size', 0.3)
+        random_state = self.kwargs.get('random_state', 228)
+
+        self.X_train_classes, self.X_test_classes, self.Y_train_classes, self.Y_test_classes = train_test_split(X_labels, Y_families, test_size=test_size, random_state=random_state)
+        self.X_train_benign, self.X_test_benign, self.Y_train_benign, self.Y_test_benign = train_test_split(X_benign, Y_families, test_size=test_size, random_state=random_state)
+        self.X_train_vpn, self.X_test_vpn, self.Y_train_vpn, self.Y_test_vpn = train_test_split(X_vpn, Y_families, test_size=test_size, random_state=random_state)
+        self.X_train_tor, self.X_test_tor, self.Y_train_tor, self.Y_test_tor = train_test_split(X_tor, Y_families, test_size=test_size, random_state=random_state)
+
+    def get_X_and_Y(self, what_to_classify: str = 'class', scaler = StandardScaler()):
+        '''
+        get the X and Y lists for training
+        what_to_classify - if class, classify labels, if benign; vpn; or tor, classify families of said class
+        scaler - what scaler to use
+        '''
+
+        if what_to_classify == 'class':
+            X_train = self.X_train_classes
+            X_test = self.X_test_classes
+            Y_train = self.Y_train_classes
+            Y_test = self.Y_test_classes
+            
+        elif class_or_family == 'family':
+            X_train = self.X_train_families
+            X_test = self.X_test_families
+            Y_train = self.Y_train_families
+            Y_test = self.Y_test_families
         else:
-            label = kwargs.get('label', 'benign')
+            raise ValueError('class_or_family must be "class" or "family"')
 
-            if label == 'benign':
-                X = self.benign
-                Y = self.benign['family']
-                
-            elif label == 'vpn':
-                X = self.vpn
-                Y = self.vpn['family']
+        try:
+            X_train_scaled = scaler.fit_transform(X_train)
+            X_test_scaled = scaler.transform(X_test)
+        except AttributeError as e:
+            raise AttributeError(f'Scaler must be a sklearn scaler class - {e}')
 
-            elif label == 'tor':
-                X = self.tor
-                Y = self.tor['family']
-
-            X.drop(columns=['family'], axis=1, inplace=True)
-            Y = self.le.fit_transform(Y)
-
-        maximum_features = kwargs.get('maximum_features', 5000)
-        if len(X.columns) > maximum_features:
-            # remove all columns after max
-            X = X.iloc[:, :maximum_features]
-
-        test_size = kwargs.get('test_size', 0.3)
-        random_state = kwargs.get('random_state', 228)
-
-        self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(X, Y, test_size=test_size, random_state=random_state)
-
-        scaler = StandardScaler()
-        self.X_train_scaled = scaler.fit_transform(self.X_train)
-        self.X_test_scaled = scaler.transform(self.X_test)
+        return X_train_scaled, X_test_scaled, Y_train, Y_test
         
-        self.family_le = LabelEncoder()
-        self.label_family = self.family_le.fit_transform(self.data['label'])
-
         
     def drop_columns(self, columns: list):
         '''
@@ -315,9 +337,6 @@ class Data:
                     print(f'Unique values: {unique_values}')
 
             print()
-
-            # graphs.plot_histogram('darknet/graphs/preprocessing', self.data, column)
-            # graphs.plot_boxplot('darknet/graphs/preprocessing', self.data, column)
 
         print(f'Columns - {len(dataframe.columns)}')
         print(f'Unique counts - {counts}')

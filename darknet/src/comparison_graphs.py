@@ -1,3 +1,12 @@
+'''
+AI Usage Statement
+Tools Used: Copilot (Claude 3.5 Sonnet)
+- Usage: Changing (already implemented by us) plots to use dark theme and orange colors. 
+- Verification: The plots look nice.
+
+Prohibited Use Compliance: Confirmed
+'''
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -44,8 +53,7 @@ class ComparisonGraphs:
         or all models + micro-average if no args given.
         '''
         print("Plotting confusion matrix...")
-        
-        # This all assumes we are doing the OneVsRestClassifier for SVM
+        plt.style.use('dark_background')
         plt.figure(figsize=figsize)
         
         if model_name is not None and model_name in self.results:
@@ -63,26 +71,26 @@ class ComparisonGraphs:
             if y_pred.ndim == 1 or y_pred.shape[1] == 1:
                 # binary classification
                 cm = confusion_matrix(y_true, y_pred)
-                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
-                plt.title(f"Confusion Matrix for {model}")
-                plt.xlabel("Predicted")
-                plt.ylabel("True")
-                plt.xticks(ticks=[0.5, 1.5], labels=['Benign', 'Malware'], rotation=0)
-                plt.yticks(ticks=[0.5, 1.5], labels=['Benign', 'Malware'], rotation=0)
+                sns.heatmap(cm, annot=True, fmt='d', cmap='inferno', cbar=False)
+                plt.title(f"Confusion Matrix for {model}", color='white')
+                plt.xlabel("Predicted", color='white')
+                plt.ylabel("True", color='white')
+                plt.xticks(ticks=[0.5, 1.5], labels=['Benign', 'Malware'], rotation=0, color='white')
+                plt.yticks(ticks=[0.5, 1.5], labels=['Benign', 'Malware'], rotation=0, color='white')
             
             else:
                 # multiclass classification
                 cm = confusion_matrix(y_true, y_pred)
-                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
-                plt.title(f"Confusion Matrix for {model}")
-                plt.xlabel("Predicted")
-                plt.ylabel("True")
-                plt.xticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=45)
-                plt.yticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0)
+                sns.heatmap(cm, annot=True, fmt='d', cmap='inferno', cbar=False)
+                plt.title(f"Confusion Matrix for {model}", color='white')
+                plt.xlabel("Predicted", color='white')
+                plt.ylabel("True", color='white')
+                plt.xticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=45, color='white')
+                plt.yticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0, color='white')
 
             plt.tight_layout()
-            plt.savefig(f"darknet/graphs/{model}_confusion_matrix.png")
-            plt.show()
+            plt.savefig(f"darknet/graphs/{model}_confusion_matrix.png", facecolor='black', edgecolor='none')
+            plt.close()
 
     def plot_roc_curves(self, model_name: str = None, class_label=None, save_path: str = "darknet/graphs/roc_curve.png", figsize=(12, 6)):
         '''
@@ -96,8 +104,7 @@ class ComparisonGraphs:
                         If None and multiclass, plots micro-average only.
         '''
         print("Plotting ROC curves...")
-        
-        # This all assumes we are doing the OneVsRestClassifier for SVM
+        plt.style.use('dark_background')
         plt.figure(figsize=figsize)
         
         if model_name in self.results:
@@ -144,21 +151,24 @@ class ComparisonGraphs:
                         label=f"{m} – micro-avg (AUC={roc_auc:.2f})"
                     )
                 
-        plt.plot([0, 1], [0, 1], linestyle='-', color='red', alpha=0.5)
-        plt.title("ROC Curve")
-        plt.xlabel("False Positive Rate")
-        plt.ylabel("True Positive Rate")
-        plt.legend(loc="lower right")
-        plt.grid(True)
+        plt.plot([0, 1], [0, 1], linestyle='-', color='#f66500', alpha=0.5)
+        plt.title("ROC Curve", color='white')
+        plt.xlabel("False Positive Rate", color='white')
+        plt.ylabel("True Positive Rate", color='white')
+        plt.legend(loc="lower right", facecolor='black', labelcolor='white')
+        plt.grid(True, color='gray', alpha=0.2)
+        plt.tick_params(colors='white')
         plt.tight_layout()
-        plt.savefig(save_path)
-        
+        plt.savefig(save_path, facecolor='black', edgecolor='none')
+        plt.close()
+
     def plot_precision_recall_curves(self, model_name: str = None, class_label=None, save_path: str = "darknet/graphs/precision_recall_curve.png", figsize=(12, 6)):
         '''
         Generate the precison and recall curves of the model
         '''
 
         print("Plotting Precision-Recall curves...")
+        plt.style.use('dark_background')
         plt.figure(figsize=figsize)
     
         # Determine which models to plot
@@ -218,53 +228,58 @@ class ComparisonGraphs:
         
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
-        plt.title("Precision-Recall Curve")
-        plt.xlabel("Recall")
-        plt.ylabel("Precision")
-        plt.legend(loc="lower left")
-        plt.grid(True)
+        plt.title("Precision-Recall Curve", color='white')
+        plt.xlabel("Recall", color='white')
+        plt.ylabel("Precision", color='white')
+        plt.legend(loc="lower left", facecolor='black', labelcolor='white')
+        plt.grid(True, color='gray', alpha=0.2)
+        plt.tick_params(colors='white')
         plt.tight_layout()
-        plt.savefig(save_path)
+        plt.savefig(save_path, facecolor='black', edgecolor='none')
+        plt.close()
         
     def plot_runtime_comparison(self, figsize=(12, 6), save_path="darknet/graphs/runtime_comparison.png"):  
         '''
         Bar chart comparing the training times of each model
         '''
         print("Plotting runtime comparison...")
-
+        plt.style.use('dark_background')
         plt.figure(figsize=figsize)
 
         models = list(self.results.keys())
         times = [self.results[m]['train_time'] for m in models]
 
         colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c']
-        bars = plt.bar(models, times, color=colors[:len(models)], edgecolor='black', linewidth=1.2)
+        bars = plt.bar(models, times, color='#f66500', edgecolor='white', linewidth=1.2)
 
         # Add time values as text on top of bars
         for i, (bar, time_val) in enumerate(zip(bars, times)):
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width()/2, height + max(times)*0.02,
                     f'{time_val:.4f}s', ha='center', va='bottom', 
-                    fontweight='bold', fontsize=10)
+                    fontweight='bold', fontsize=10, color='white')
         
         # Add grid lines for better readability
-        plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+        plt.grid(True, axis='y', linestyle='--', alpha=0.2, color='gray')
         
         # Adjust y-axis for text labels
         plt.ylim(0, max(times) * 1.15)
-        plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
+        plt.axhline(y=0, color='white', linestyle='-', alpha=0.3)
 
-        plt.xlabel("Models")
-        plt.ylabel("Training Time (seconds)")
-        plt.title("Model Training Time Comparison")
+        plt.xlabel("Models", color='white')
+        plt.ylabel("Training Time (seconds)", color='white')
+        plt.title("Model Training Time Comparison", color='white')
+        plt.tick_params(colors='white')
         plt.tight_layout()
-        plt.savefig(save_path)
+        plt.savefig(save_path, facecolor='black', edgecolor='none')
+        plt.close()
 
     def plot_metric_comparison(self, metric_name: str = None, figsize=(12, 6), save_path: str = "darknet/graphs/metric_comparison.png"):
         '''
         Input the metric you would like to compare and create a 
         chart comparing the metric against all models
         '''
+        plt.style.use('dark_background')
         plt.figure(figsize=figsize)
     
         models = []
@@ -299,22 +314,24 @@ class ComparisonGraphs:
 
         df = df.sort_values(by=metric_name, ascending=False)
 
-        sns.set_style("whitegrid")
+        sns.set_style("darkgrid")
 
         ax = sns.barplot(
             x='Model',
             y=metric_name,
             data=df,
-            palette='viridis'
+            color='#f66500'
         )
 
-        plt.title(f"{metric_name.capitalize()} Comparison Across Models")
-        plt.xlabel("Models")
-        plt.ylabel(metric_name.capitalize())
-        plt.xticks(rotation=45)
+        plt.title(f"{metric_name.capitalize()} Comparison Across Models", color='white')
+        plt.xlabel("Models", color='white')
+        plt.ylabel(metric_name.capitalize(), color='white')
+        plt.xticks(rotation=45, color='white')
+        plt.tick_params(colors='white')
         
         for i, v in enumerate(metric_v):
-            ax.text(i, v + 0.01, f"{v:.2f}", ha='center', fontsize=12)
+            ax.text(i, v + 0.01, f"{v:.2f}", ha='center', fontsize=12, color='white')
 
         plt.tight_layout()
-        plt.savefig(save_path)
+        plt.savefig(save_path, facecolor='black', edgecolor='none')
+        plt.close()

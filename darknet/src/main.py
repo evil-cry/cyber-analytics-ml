@@ -11,6 +11,12 @@ def compare_models(data):
     models = {
         'Random Forest': RandomForestClassifier(),
         'KNN': KNeighborsClassifier(),
+        'OvO Random Forest': OneVsOneClassifier(RandomForestClassifier(), -1),
+        'OvA Random Forest': OneVsRestClassifier(RandomForestClassifier(), -1),
+    }
+
+    model_kwargs = {
+        
     }
     
     results = {}
@@ -34,13 +40,13 @@ def main():
     benign = processing.Data('darknet/corpus/parts/*.csv', benign_kwargs)
 
     # TODO - make sure data analysis works
-    # data.analyze_columns()
+    data.analyze_columns()
     
     
-    # cluster = clustering.Cluster(benign, model_name='kmeans')
-    # cluster.fit(n_clusters=3)
-    # cluster.evaluate()
-    # cluster.draw()
+    cluster = clustering.Cluster(data, model_name='kmeans')
+    cluster.fit(n_clusters=3)
+    cluster.evaluate()
+    cluster.draw()
     
     #results = compare_models(data)
     #graphs  = comparison_graphs.ComparisonGraphs(results)
@@ -48,16 +54,16 @@ def main():
     
     results = compare_models(data)
     graphs = comparison_graphs.ComparisonGraphs(results)
-    #graphs.plot_roc_curves(model_name="Random Forest", class_label=2)
-    #graphs.plot_precision_recall_curves(model_name="Random Forest", class_label=2)
-    #graphs.plot_runtime_comparison()
+    graphs.plot_roc_curves(model_name="Random Forest", class_label=2)
+    graphs.plot_precision_recall_curves(model_name="Random Forest", class_label=2)
+    graphs.plot_runtime_comparison()
     graphs.plot_confusion_matrix()
-    #graphs.plot_metric_comparison("accuracy")
-    # graphs.plot_metric_comparison("accuracy")
-    # graphs.plot_metric_comparison("precision")
-    # graphs.plot_metric_comparison("recall")
-    # graphs.plot_metric_comparison("f1")
-    # graphs.plot_metric_comparison("fpr")
+    graphs.plot_metric_comparison("accuracy")
+    graphs.plot_metric_comparison("accuracy")
+    graphs.plot_metric_comparison("precision")
+    graphs.plot_metric_comparison("recall")
+    graphs.plot_metric_comparison("f1")
+    graphs.plot_metric_comparison("fpr")
 
 if __name__ == "__main__":
     main()
