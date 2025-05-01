@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 from sklearn.preprocessing import label_binarize
 
 class ComparisonGraphs:
@@ -19,11 +19,21 @@ class ComparisonGraphs:
         '''
         Calculate metrics from raw predicitions
         '''
+
+        cm = confusion_matrix(y_true, y_pred)
+        fpr = {}
+
+        for i in range(len(cm)):
+            fp = cm[:, i].sum() - cm[i, i]
+            tn = cm.sum() - (cm[:, i].sum() + cm[i, :].sum() - cm[i, i])
+            fpr[f"Class_{i}"] = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+
         metrics = {
             'accuracy': accuracy_score(y_true, y_pred),
             'precision': precision_score(y_true, y_pred, average='weighted', zero_division=0),
             'recall': recall_score(y_true, y_pred, average='weighted', zero_division=0),
-            'f1': f1_score(y_true, y_pred, average='weighted', zero_division=0)
+            'f1': f1_score(y_true, y_pred, average='weighted', zero_division=0),
+            'fpr': fpr
         }
 
         return metrics
