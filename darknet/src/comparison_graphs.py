@@ -316,11 +316,12 @@ class ComparisonGraphs:
 
         sns.set_style("darkgrid")
 
+        import random
+
         ax = sns.barplot(
             x='Model',
             y=metric_name,
             data=df,
-            color='#f66500'
         )
 
         plt.title(f"{metric_name.capitalize()} Comparison Across Models", color='white')
@@ -329,8 +330,12 @@ class ComparisonGraphs:
         plt.xticks(rotation=45, color='white')
         plt.tick_params(colors='white')
         
+        used_colors = set('blue')
         for i, v in enumerate(metric_v):
             ax.text(i, v + 0.01, f"{v:.2f}", ha='center', fontsize=12, color='white')
+            color='blue'
+            while color in used_colors:
+                color = random.choice(plt.cm.Set3.colors)
 
         plt.tight_layout()
         plt.savefig(save_path, facecolor='black', edgecolor='none')

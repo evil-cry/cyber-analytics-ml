@@ -37,7 +37,8 @@ class Model:
 
             self.X_train, self.Y_train, self.X_test, self.Y_test = data.set_get_X_Y(
                 kwargs.get('what_to_classify', 'class'),
-                kwargs.get('scaler', StandardScaler())
+                kwargs.get('scaler', StandardScaler()),
+                kwargs.get('max_samples', 5000)
             )
 
             start = time.time()
@@ -132,13 +133,9 @@ class Data:
 
             self._cleanup()
 
-            self.benign = self.data.copy(deep=True)
-            self.vpn = self.data.copy(deep=True)
-            self.tor = self.data.copy(deep=True)
-
-            self.benign[self.benign['label'] == 'benign']
-            self.vpn[self.vpn['label'] == 'vpn']
-            self.tor[self.tor['label'] == 'tor']
+            self.benign = self.data[self.data['label'] == 'benign'].copy(deep=True)
+            self.vpn = self.data[self.data['label'] == 'vpn'].copy(deep=True)
+            self.tor = self.data[self.data['label'] == 'tor'].copy(deep=True)
 
             self.benign.drop(columns=['label'], axis=1, inplace=True)
             self.vpn.drop(columns=['label'], axis=1, inplace=True)
@@ -173,7 +170,7 @@ class Data:
             except ValueError:
                 pass  # if the column is not numeric, skip it
 
-    def _extract_features(self, what_to_classify: str = 'class', scaler = StandardScaler()):
+    def _extract_features(self, what_to_classify: str = 'class', scaler = StandardScaler(), max_samples = 5000):
         '''
         Extract features from the dataset.
         '''
@@ -181,22 +178,29 @@ class Data:
         if not isinstance(self.data, DataFrame):
             return None
         
+        if max_samples > 0:
+            # get the labels
+            self.data = self.data.groupby('label').apply(
+                # sample up to max_samples
+                lambda x: x.sample(min(len(x), max_samples), random_state=228)
+            # remove grouping
+            ).reset_index(drop=True)
+        
         if what_to_classify == 'class':
             X = self.data.drop(columns=['label'], axis=1)
             X.drop(columns=['family'], axis=1, inplace=True) 
             Y = self.data['label']
             Y = self.le.fit_transform(Y)
 
-        elif what_to_classify == 'benign':
-            X_benign = self.benign
-            X_benign.drop(columns=['family'], axis=1, inplace=True)
-            
-
-        elif what_to_classify == 'vpn' or what_to_classify == 'tor': 
+        elif what_to_classify == 'benign' or what_to_classify == 'vpn' or what_to_classify == 'tor': 
             Y = self.benign['family']
             Y = self.le.fit_transform(Y)
 
-            if what_to_classify == 'vpn':
+            if what_to_classify == 'benign':
+                X = self.benign
+                X.drop(columns=['family'], axis=1, inplace=True)
+
+            elif what_to_classify == 'vpn':
                 X = self.vpn
                 X.drop(columns=['family'], axis=1, inplace=True)
 
@@ -209,13 +213,14 @@ class Data:
 
         self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(X, Y, test_size=test_size, random_state=random_state)
 
-    def set_get_X_Y(self, what_to_classify: str = 'class', scaler = StandardScaler()):
+    def set_get_X_Y(self, what_to_classify: str = 'class', scaler = StandardScaler(), max_samples = 0):
         '''
         get the X and Y lists for training
         what_to_classify - if class, classify labels, if benign; vpn; or tor, classify families of said class
         scaler - what scaler to use. None for no scaling
+        max_samples - maximum number of samples to use for training. 0 for all
         '''
-        self._extract_features(what_to_classify, scaler)
+        self._extract_features(what_to_classify, scaler, max_samples)
 
         if scaler:
             try:

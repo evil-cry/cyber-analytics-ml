@@ -13,15 +13,6 @@ class Cluster:
     def __init__(self, data: Data, model_name: str, kwargs):
         self.data = data
         self.kwargs = kwargs
-
-        self.X_train, self.Y_train, self.X_test, self.Y_test = data.set_get_X_Y(
-            kwargs.get('what_to_classify', 'class'),
-        )
-
-        self.features = np.vstack((data.X_train_scaled, data.X_test_scaled))
-        
-        self.labels = np.concatenate((data.Y_train, data.Y_test))
-
         self.model_name = model_name
 
         self.clusters = None
@@ -70,9 +61,13 @@ class Cluster:
         points_2d = pca.fit_transform(self.features)
         
         # Plot each cluster
-        plt.figure(figsize=(8, 8))
+        plt.style.use('dark_background')
+        plt.figure(figsize=(8, 8), facecolor='black')
+        ax = plt.gca()
+        ax.set_facecolor('black')
+
         unique_labels = np.unique(self.clusters)
-        used_labels = set()
+        used_labels = []
 
         i = -1
         for label in unique_labels:
@@ -83,43 +78,40 @@ class Cluster:
                 label_name = 'Noise'
 
             elif self.model_name == 'kmeans':
-                if self.kwargs.get('what_to_classify', 'class') == 'class':
-                    # find majority of traffic in cluster
-                    codes = self.labels[mask] 
-                    if codes.size > 0:
-                        majority_code = np.bincount(codes).argmax()
-                        # map code back to family name based on most prevalent traffic in each cluster
-                        label_name = f'Majority {self.data.le.inverse_transform([majority_code])[0]}'
-                    else:
-                        label_name = 'Empty'
-
+                codes = self.labels[mask] 
+                if codes.size > 0:
+                    majority_code = np.bincount(codes).argmax()
+                    # map code back to family name based on most prevalent traffic in each cluster
+                    label_name = f'Majority {self.data.le.inverse_transform([majority_code])[0]}'
                 else:
-                    family_codes = self.data.label_family[mask]
-                    if family_codes.size > 0:
-                        majority_family = np.bincount(family_codes).argmax()
-                        label_name = f'Majority {self.data.family_le.inverse_transform([majority_family])[0]}'
-                    else:
-                        label_name = 'Empty'
+                    label_name = 'Empty'
             else:
                 label_name = f'Cluster {label}'
                 
             if label_name in used_labels:
-                label_name = f'{label_name} (Cluster {i})'
-            used_labels.add(label_name)
+                label_name = f'{label_name} (Cluster {used_labels.count(label_name)})'
+            used_labels.append(label_name)
             
             plt.scatter(
                 points_2d[mask, 0],
                 points_2d[mask, 1],
                 s=30,
                 alpha=0.6,
-                label=label_name
+                label=label_name,
+                color=plt.cm.Set3(i % 12),
             )
             
-        # Make it nice looking
-        plt.title(f'{self.model_name.capitalize()} Cluster Plot ({self.n_clusters} clusters)')
-        plt.xlabel('Principal Component 1')
-        plt.ylabel('Principal Component 2')
-        plt.legend()
+        plt.title(f'{self.model_name.capitalize()} Cluster Plot ({self.n_clusters} clusters)', 
+                color='white', pad=20)
+        plt.xlabel('Principal Component 1', color='white')
+        plt.ylabel('Principal Component 2', color='white')
+        plt.tick_params(colors='white')
+        
+        legend = plt.legend(facecolor='black', labelcolor='white')
+        plt.setp(legend.get_frame(), color='black')
+        
         plt.tight_layout()
-        plt.savefig(filepath)
+        plt.savefig(filepath, facecolor='black', bbox_inches='tight')
         plt.close()
+        
+        plt.style.use('default')

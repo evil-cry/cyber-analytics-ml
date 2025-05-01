@@ -27,7 +27,8 @@ def compare_models(data):
     
     results = {}
     for name, model in models.items():
-        clf = processing.Model(model, name, data)
+        model_kwargs = model_kwargs.get(name, {})
+        clf = processing.Model(model, name, data, model_kwargs)
         results[name] = clf.evaluate()
         
         results[name] = {
@@ -47,19 +48,15 @@ def main():
 
     #data.analyze_columns()
     
-    cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'class'})
-    cluster.fit(n_clusters=3)
-    cluster.evaluate()
-    cluster.draw()
+    #cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'class'})
+    #cluster.fit(n_clusters=3)
+    #cluster.evaluate()
+    #cluster.draw()
 
     cluster = clustering.Cluster(benign, model_name='kmeans', kwargs={'what_to_classify': 'benign'})
     cluster.fit(n_clusters=8)
     cluster.evaluate()
     cluster.draw()
-    
-    #results = compare_models(data)
-    #graphs  = comparison_graphs.ComparisonGraphs(results)
-    #graphs.plot_runtime_comparison()
     
     results = compare_models(data)
     graphs = comparison_graphs.ComparisonGraphs(results)
