@@ -27,6 +27,7 @@ from sklearn.preprocessing import StandardScaler, RobustScaler, LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix as sklearn_confusion_matrix
+from sklearn.model_selection import cross_val_score
 
 class Model:
     def __init__(self, model, name, data, kwargs):
@@ -75,6 +76,15 @@ class Model:
 
             print(f'{self.name} Confusion Matrix - ')
             print(f'\n{self.confusion_matrix}\n')
+
+            print(f'{self.name} Cross Validation - ')
+            self.verify_model_performance()
+            print()
+
+    def verify_model_performance(self):
+        # 5-fold cross validation
+        scores = cross_val_score(self.model, self.X_train, self.Y_train)
+        print(f"{scores.mean():.3f} (+/- {scores.std() * 2:.3f})")
     
     def draw_confusion_matrix(self):
         save_path = f'darknet/graphs/{self.name}'

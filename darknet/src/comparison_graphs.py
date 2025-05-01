@@ -7,6 +7,7 @@ Tools Used: Copilot (Claude 3.5 Sonnet)
 Prohibited Use Compliance: Confirmed
 '''
 
+import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -267,11 +268,14 @@ class ComparisonGraphs:
         plt.savefig(save_path, facecolor='black', edgecolor='none')
         plt.close()
 
-    def plot_metric_comparison(self, metric_name: str = None, figsize=(12, 6), save_path: str = "darknet/graphs/metric_comparison.png"):
+    def plot_metric_comparison(self, metric_name: str = None, figsize=(12, 6), save_path: str = 'darknet/graphs/metric_comparison'):
         '''
         Input the metric you would like to compare and create a 
         chart comparing the metric against all models
         '''
+        os.makedirs(save_path, exist_ok=True)
+        save_path = save_path + f"/{metric_name}.png"
+
         plt.style.use('dark_background')
         plt.figure(figsize=figsize)
     
@@ -317,9 +321,8 @@ class ComparisonGraphs:
 
         df = df.sort_values(by=metric_name, ascending=False)
 
-        sns.set_style("darkgrid")
-
-        import random
+        # Removed darkgrid style to use dark_background consistently
+        # sns.set_style("darkgrid")
 
         ax = sns.barplot(
             x='Model',
@@ -327,6 +330,14 @@ class ComparisonGraphs:
             data=df,
             color='#f66500'
         )
+        
+        for patch in ax.patches:
+            patch.set_facecolor('#f66500')
+            patch.set_edgecolor('white')
+            patch.set_linewidth(1.2)
+            
+        ax.set_facecolor('black')
+        plt.grid(True, axis='y', linestyle='--', alpha=0.2, color='gray')
 
         plt.title(f"{metric_name.capitalize()} Comparison Across Models", color='white')
         plt.xlabel("Models", color='white')
