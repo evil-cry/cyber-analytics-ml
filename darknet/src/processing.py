@@ -207,7 +207,7 @@ class Data:
         test_size = self.kwargs.get('test_size', 0.3)
         random_state = self.kwargs.get('random_state', 228)
 
-        self.X_train, self.X_test_classes, self.Y_train_classes, self.Y_test_classes = train_test_split(X, Y, test_size=test_size, random_state=random_state)
+        self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(X, Y, test_size=test_size, random_state=random_state)
 
     def set_get_X_Y(self, what_to_classify: str = 'class', scaler = StandardScaler()):
         '''
@@ -226,7 +226,7 @@ class Data:
 
         self.X_train_scaled = X_train_scaled
         self.X_test_scaled = X_test_scaled
-        
+
         return X_train_scaled, X_test_scaled, self.Y_train, self.Y_test
         
         
@@ -254,9 +254,9 @@ class Data:
         """
         df = self.data
         n_rows = len(df)
-        benign = df[df['label'] == 'benign']
-        vpn = df[df['label'] == 'vpn']
-        tor = df[df['label'] == 'tor']
+        benign = len(df[df['label'] == 'benign'])
+        vpn = len(df[df['label'] == 'vpn'])
+        tor = len(df[df['label'] == 'tor'])
 
         print('=== Dataset Summary ===')
         print(f'{n_rows} samples: {benign} benign, {vpn} vpn, {tor} tor. {df.shape[1]} columns.\n')
@@ -283,8 +283,8 @@ class Data:
             else:
                 # Top 5 values
                 counts = series.value_counts(dropna=False)
-                top5 = counts.iloc[:5]
-                for val, cnt in top5.items():
+                top8 = counts.iloc[:8]
+                for val, cnt in top8.items():
                     pct = cnt / n_rows * 100
                     val_label = '<NaN>' if pd.isna(val) else val
                     print(f"  • {val_label!r}: {cnt} ({pct:.2f}%)")

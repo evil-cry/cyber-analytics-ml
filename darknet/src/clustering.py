@@ -10,8 +10,9 @@ from sklearn.decomposition import PCA
 from processing import Data
 
 class Cluster:
-    def __init__(self, data: Data, model_name: str, **kwargs):
+    def __init__(self, data: Data, model_name: str, kwargs):
         self.data = data
+        self.kwargs = kwargs
 
         self.X_train, self.Y_train, self.X_test, self.Y_test = data.set_get_X_Y(
             kwargs.get('what_to_classify', 'class'),
@@ -30,8 +31,9 @@ class Cluster:
         self.calinski = 0
 
     def fit(self, **kwargs):
+        print(f'Clustering using {self.model_name} model...')
+
         if self.model_name == 'kmeans':
-            print("Training kmeans model...")
             n_clusters = kwargs.get('n_clusters', 8)
             self.model = KMeans(n_clusters=n_clusters)
             self.clusters = self.model.fit_predict(self.features)
@@ -39,7 +41,6 @@ class Cluster:
         elif (self.model_name == 'dbscan'):
             eps = kwargs.get('eps', 0.5)
             min_samples = kwargs.get('min_samples', 5)
-
             self.model = DBSCAN(eps=eps, min_samples=min_samples)
 
         self.clusters = self.model.fit_predict(self.features)
@@ -55,10 +56,10 @@ class Cluster:
             self.calinski = 0
 
     def draw(self, filepath='darknet/graphs/clusters'):
-        """
+        '''
             Draw graph which visualizes the results of the model
             Labels each cluster by the majority of traffic in it
-        """
+        '''
         
         filepath = filepath + f'/{self.model_name}/'
         os.makedirs(filepath, exist_ok=True)
@@ -71,30 +72,41 @@ class Cluster:
         # Plot each cluster
         plt.figure(figsize=(8, 8))
         unique_labels = np.unique(self.clusters)
+        used_labels = set()
+
+        i = -1
         for label in unique_labels:
+            i += 1
             mask = (self.clusters == label)
+
             if label == -1:
                 label_name = 'Noise'
+
             elif self.model_name == 'kmeans':
-                # find majority of traffic in cluster
-                codes = self.labels[mask] 
-                if codes.size > 0:
-                    majority_code = np.bincount(codes).argmax()
-                    # map code back to family name based on most prevalent traffic in each cluster
-                    label_name = self.data.le.inverse_transform([majority_code])[0]
+                if self.kwargs.get('what_to_classify', 'class') == 'class':
+                    # find majority of traffic in cluster
+                    codes = self.labels[mask] 
+                    if codes.size > 0:
+                        majority_code = np.bincount(codes).argmax()
+                        # map code back to family name based on most prevalent traffic in each cluster
+                        label_name = f'Majority {self.data.le.inverse_transform([majority_code])[0]}'
+                    else:
+                        label_name = 'Empty'
+
                 else:
-                    label_name = "Empty"
-                '''
-                family_codes = self.data.label_family[mask]
-                if family_codes.size > 0:
-                    majority_family = np.bincount(family_codes).argmax()
-                    label_name = self.data.family_le.inverse_transform([majority_family])[0]
-                else:
-                    label_name = "Empty"
-                '''
+                    family_codes = self.data.label_family[mask]
+                    if family_codes.size > 0:
+                        majority_family = np.bincount(family_codes).argmax()
+                        label_name = f'Majority {self.data.family_le.inverse_transform([majority_family])[0]}'
+                    else:
+                        label_name = 'Empty'
             else:
-                label_name = f"Cluster {label}"
+                label_name = f'Cluster {label}'
                 
+            if label_name in used_labels:
+                label_name = f'{label_name} (Cluster {i})'
+            used_labels.add(label_name)
+            
             plt.scatter(
                 points_2d[mask, 0],
                 points_2d[mask, 1],

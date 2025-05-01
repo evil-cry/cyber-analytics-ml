@@ -49,7 +49,7 @@ class NetworkTrafficVisualizer:
         corr = df[top_features].corr()
 
         # Create a mask for the upper triangle
-        mask = np.triu(np.ones_like(corr, dtype=bool))
+        mask = np.triu(np.ones_like(corr, dtype=bool), k=1)
 
         sns.heatmap(corr, mask=mask, cmap='inferno', annot=True, 
             fmt='.2f', linewidths=0.5, vmin=-1, vmax=1)
@@ -57,14 +57,15 @@ class NetworkTrafficVisualizer:
         ax = plt.gca()
         ax.set_facecolor('black')
         plt.tight_layout()
+        plt.tick_params(colors='white')
         plt.savefig('darknet/graphs/correlation_matrix.png', facecolor='black')
-        plt.show()
         plt.style.use('default')
 
+    '''
     def plot_feature_distribution(self, n_features: int = 20):
-        '''
+        """
         Plot the distribution of top N features.
-        '''
+        """
         print("Plotting feature distribution...")
         plt.style.use('dark_background')
         plt.figure(figsize=(10, 6), facecolor='black')
@@ -93,8 +94,8 @@ class NetworkTrafficVisualizer:
 
         plt.tight_layout()
         plt.savefig('darknet/graphs/feature_distribution.png', facecolor='black')
-        plt.show()
         plt.style.use('default')
+    '''
 
     def plot_protocol_distribution(self):
         '''
@@ -124,7 +125,6 @@ class NetworkTrafficVisualizer:
             plt.xticks(rotation=45)
             plt.tight_layout()
             plt.savefig(f'darknet/graphs/protocol_distribution.png', facecolor='black')
-            plt.show()
             plt.style.use('default')
 
     def plot_network_graph(self, max_edges: int = 100):
@@ -161,7 +161,6 @@ class NetworkTrafficVisualizer:
             plt.axis('off')
             plt.tight_layout()
             plt.savefig('darknet/graphs/network_graph.png')
-            plt.show()
             
             # Print statistics
             print("Network Graph Statistics:")
@@ -188,6 +187,8 @@ class NetworkTrafficVisualizer:
         '''
         Plot a heatmap of the port distribution.
         '''
+        print("Plotting port heatmap...")
+        
         if 'src port' in self.data.columns and 'dst port' in self.data.columns:
             port_ranges = [
                 (0, 1023, 'Well-known'),
@@ -224,7 +225,6 @@ class NetworkTrafficVisualizer:
             ax.set_facecolor('black')
             plt.tight_layout()
             plt.savefig('darknet/graphs/port_heatmap.png', facecolor='black')
-            plt.show()
             
             # Plot top ports
             plt.figure(figsize=(12, 6), facecolor='black')
@@ -238,52 +238,73 @@ class NetworkTrafficVisualizer:
             ax.set_facecolor('black')
             plt.xticks(rotation=45)
             plt.tight_layout()
+            plt.tick_params(colors='white')
             plt.savefig('darknet/graphs/top_dst_ports.png', facecolor='black')
-            plt.show()
             plt.style.use('default')
 
     def plot_class_piechart(self, label: str = 'label'):
         '''
-        Plot a pie chart showing the distribution of traffic classes.
+        Plot a pie chart showing the distribution of traffic classes with a separate legend.
         @param label: label parameter. Can be 'label', 'benign', 'vpn' or 'tor'.
         '''
+        print("Plotting class piechart...")
 
         if label not in ['label', 'benign', 'vpn', 'tor']:
             raise ValueError('Label must be label, benign, vpn or tor.')
 
-        if label in self.data.columns:
-            plt.style.use('dark_background')
-            plt.figure(figsize=(10, 8), facecolor='black')
-            
-            # Get class counts and calculate percentages
-            if label == 'label':
-                class_counts = self.data['label'].value_counts()
-            else:
-                class_counts = self.data['family'].value_counts()
-            
-            # Create pie chart
-            plt.pie(class_counts.values, 
-                    labels=class_counts.index,
-                    autopct='%1.1f%%',
-                    colors=plt.cm.Set3.colors,
-                    startangle=90)
-            
-            plt.title(f'Distribution of {label if label in ['benign', 'vpn', 'tor'] else 'all'} samples', color='white', pad=20)
-            
-            # Equal aspect ratio ensures that pie is drawn as a circle
-            plt.axis('equal')
-            
-            plt.tight_layout()
-            plt.savefig(f'darknet/graphs/{label if label in ['benign', 'vpn', 'tor'] else 'all'}_distribution.png', facecolor='black')
-            plt.show()
-            plt.style.use('default')
+        plt.style.use('dark_background')
+        plt.figure(figsize=(12, 8), facecolor='black')
+        
+        # Get class counts
+        if label == 'label':
+            class_counts = self.data['label'].value_counts()
+        else:
+            class_counts = self.data['family'].value_counts()
+        
+        # Calculate percentages
+        total = class_counts.sum()
+        percentages = (class_counts / total) * 100
+        
+        # Create custom labels for legend
+        legend_labels = [
+            f'{name} ({count:,} samples, {pct:.1f}%)'
+            for name, (count, pct) in zip(class_counts.index, zip(class_counts, percentages))
+        ]
+        
+        # Create pie chart without labels or percentages on the plot
+        patches, _ = plt.pie(class_counts.values,
+                        colors=plt.cm.Set3.colors,
+                        startangle=90)
+        
+        plt.title(f'Distribution of {label if label in ["benign", "vpn", "tor"] else "all"} samples\nTotal: {total:,} samples', 
+                color='white', 
+                pad=20)
+        
+        # Add legend
+        plt.legend(patches, 
+                legend_labels,
+                title='Classes',
+                loc='center left',
+                bbox_to_anchor=(1, 0.5),
+                facecolor='black',
+                labelcolor='white')
+        
+        # Equal aspect ratio ensures that pie is drawn as a circle
+        plt.axis('equal')
+        
+        plt.tight_layout()
+        plt.tick_params(colors='white')
+        plt.savefig(f'darknet/graphs/{label if label in ["benign", "vpn", "tor"] else "all"}_distribution.png', 
+                    facecolor='black',
+                    bbox_inches='tight')
+        plt.style.use('default')
 
 def main():
     visualizer = NetworkTrafficVisualizer()
     visualizer.plot_correlation_matrix(n_features=20)
-    visualizer.plot_feature_distribution(n_features=5)
+    #visualizer.plot_feature_distribution(n_features=5)
     visualizer.plot_protocol_distribution()
-    visualizer.plot_network_graph(max_edges=100)
+    #visualizer.plot_network_graph(max_edges=100)
     visualizer.plot_port_heatmap()
     visualizer.plot_class_piechart(label='label')
     visualizer.plot_class_piechart(label='benign')

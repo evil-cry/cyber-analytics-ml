@@ -13,8 +13,8 @@ def compare_models(data):
         'Random Forest': RandomForestClassifier(),
         'KNN': KNeighborsClassifier(),
         'SVM': SVC(),
-        'OvO Random Forest': OneVsOneClassifier(RandomForestClassifier(), -1),
-        'OvA Random Forest': OneVsRestClassifier(RandomForestClassifier(), -1),
+        'OvO Random Forest': OneVsOneClassifier(RandomForestClassifier(), n_jobs=-1),
+        'OvA Random Forest': OneVsRestClassifier(RandomForestClassifier(), n_jobs=-1),
     }
 
     model_kwargs = {
@@ -45,15 +45,14 @@ def main():
     benign_kwargs = {'classify_families': True, 'label': 'benign'}
     benign = processing.Data('darknet/corpus/parts/*.csv', benign_kwargs)
 
-    # TODO - make sure data analysis works
-    data.analyze_columns()
+    #data.analyze_columns()
     
     cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'class'})
     cluster.fit(n_clusters=3)
     cluster.evaluate()
     cluster.draw()
 
-    cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'benign'})
+    cluster = clustering.Cluster(benign, model_name='kmeans', kwargs={'what_to_classify': 'benign'})
     cluster.fit(n_clusters=8)
     cluster.evaluate()
     cluster.draw()
