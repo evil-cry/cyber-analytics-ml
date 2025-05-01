@@ -60,8 +60,8 @@ def main():
     
     results = compare_models(data)
     graphs = comparison_graphs.ComparisonGraphs(results)
-    graphs.plot_roc_curves(model_name="Random Forest", class_label=2)
-    graphs.plot_precision_recall_curves(model_name="Random Forest", class_label=2)
+    graphs.plot_roc_curves(model_name="Random Forest")
+    graphs.plot_precision_recall_curves(model_name="Random Forest")
     graphs.plot_runtime_comparison()
     graphs.plot_confusion_matrix(decoder=data.decode_labels)
     graphs.plot_metric_comparison("accuracy")

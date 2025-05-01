@@ -74,10 +74,7 @@ class ComparisonGraphs:
                 classes = unique_codes
 
             cm = confusion_matrix(y_true, y_pred)
-            
-            if model == 'Random Forest':
-                model = 'RF' 
-
+        
             sns.heatmap(cm, annot=True, fmt='d', cmap='inferno', cbar=False)
             plt.title(f"Confusion Matrix for {model}", color='white')
             plt.xlabel("Predicted", color='white')
@@ -246,7 +243,6 @@ class ComparisonGraphs:
         models = list(self.results.keys())
         times = [self.results[m]['train_time'] for m in models]
 
-        colors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c']
         bars = plt.bar(models, times, color='#f66500', edgecolor='white', linewidth=1.2)
 
         # Add time values as text on top of bars
@@ -329,20 +325,17 @@ class ComparisonGraphs:
             x='Model',
             y=metric_name,
             data=df,
+            color='#f66500'
         )
 
         plt.title(f"{metric_name.capitalize()} Comparison Across Models", color='white')
         plt.xlabel("Models", color='white')
         plt.ylabel(metric_name.capitalize(), color='white')
-        plt.xticks(rotation=45, color='white')
+        plt.xticks(color='white')
         plt.tick_params(colors='white')
         
-        used_colors = set('blue')
         for i, v in enumerate(metric_v):
             ax.text(i, v + 0.01, f"{v:.2f}", ha='center', fontsize=12, color='white')
-            color='blue'
-            while color in used_colors:
-                color = random.choice(plt.cm.Set3.colors)
 
         plt.tight_layout()
         plt.savefig(save_path, facecolor='black', edgecolor='none')
