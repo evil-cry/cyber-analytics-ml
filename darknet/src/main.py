@@ -51,12 +51,13 @@ def main():
     #graphs.plot_roc_curves(model_name="Random Forest", class_label=2)
     #graphs.plot_precision_recall_curves(model_name="Random Forest", class_label=2)
     #graphs.plot_runtime_comparison()
+    graphs.plot_confusion_matrix()
     #graphs.plot_metric_comparison("accuracy")
-    graphs.plot_metric_comparison("accuracy")
-    graphs.plot_metric_comparison("precision")
-    graphs.plot_metric_comparison("recall")
-    graphs.plot_metric_comparison("f1")
-    graphs.plot_metric_comparison("fpr")
+    # graphs.plot_metric_comparison("accuracy")
+    # graphs.plot_metric_comparison("precision")
+    # graphs.plot_metric_comparison("recall")
+    # graphs.plot_metric_comparison("f1")
+    # graphs.plot_metric_comparison("fpr")
 
 if __name__ == "__main__":
     main()

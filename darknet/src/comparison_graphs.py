@@ -38,6 +38,52 @@ class ComparisonGraphs:
 
         return metrics
 
+    def plot_confusion_matrix(self, model_name: str = None, figsize=(12, 6)):
+        '''
+        Plot confusion matrix for a single model and single class (if specified),
+        or all models + micro-average if no args given.
+        '''
+        print("Plotting confusion matrix...")
+        
+        # This all assumes we are doing the OneVsRestClassifier for SVM
+        plt.figure(figsize=figsize)
+        
+        if model_name is not None and model_name in self.results:
+            models = [model_name]
+        else:
+            models = list(self.results.keys())
+
+        for model in models:
+            result = self.results[model]
+            y_true = np.array(result['y_true'])
+            y_pred = np.array(result['y_pred'])
+            classes = np.unique(y_true)
+
+            # binary vs multiclass switch
+            if y_pred.ndim == 1 or y_pred.shape[1] == 1:
+                # binary classification
+                cm = confusion_matrix(y_true, y_pred)
+                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+                plt.title(f"Confusion Matrix for {model}")
+                plt.xlabel("Predicted")
+                plt.ylabel("True")
+                plt.xticks(ticks=[0.5, 1.5], labels=['Benign', 'Malware'], rotation=0)
+                plt.yticks(ticks=[0.5, 1.5], labels=['Benign', 'Malware'], rotation=0)
+            
+            else:
+                # multiclass classification
+                cm = confusion_matrix(y_true, y_pred)
+                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+                plt.title(f"Confusion Matrix for {model}")
+                plt.xlabel("Predicted")
+                plt.ylabel("True")
+                plt.xticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=45)
+                plt.yticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0)
+
+            plt.tight_layout()
+            plt.savefig(f"darknet/graphs/{model}_confusion_matrix.png")
+            plt.show()
+
     def plot_roc_curves(self, model_name: str = None, class_label=None, save_path: str = "darknet/graphs/roc_curve.png", figsize=(12, 6)):
         '''
         Plot ROC for a single model and single class (if specified),
