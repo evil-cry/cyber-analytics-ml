@@ -35,7 +35,7 @@ class Model:
             self.model = model
             self.kwargs = kwargs
 
-            self.X_train, self.Y_train, self.X_test, self.Y_test = data.set_get_X_Y(
+            self.X_train, self.X_test, self.Y_train, self.Y_test = data.set_get_X_Y(
                 kwargs.get('what_to_classify', 'class'),
                 kwargs.get('scaler', StandardScaler()),
                 kwargs.get('max_samples', 5000)
@@ -56,6 +56,11 @@ class Model:
         self.model.fit(self.X_train, self.Y_train)
 
     def _classify(self):
+        if hasattr(self.model, "predict_proba"):
+            self.y_prob = self.model.predict_proba(self.X_test_scaled)
+        else:
+            self.y_prob = None
+            
         return self.model.predict(self.X_test)
     
     def evaluate(self, print_report = True):
@@ -178,7 +183,7 @@ class Data:
         if not isinstance(self.data, DataFrame):
             return None
         
-        if max_samples > 0:
+        if max_samples > 0 and what_to_classify == 'class':
             # get the labels
             self.data = self.data.groupby('label').apply(
                 # sample up to max_samples
@@ -190,23 +195,23 @@ class Data:
             X = self.data.drop(columns=['label'], axis=1)
             X.drop(columns=['family'], axis=1, inplace=True) 
             Y = self.data['label']
-            Y = self.le.fit_transform(Y)
 
-        elif what_to_classify == 'benign' or what_to_classify == 'vpn' or what_to_classify == 'tor': 
+        elif what_to_classify == 'benign':
+            X = self.benign
+            X.drop(columns=['family'], axis=1, inplace=True)
             Y = self.benign['family']
-            Y = self.le.fit_transform(Y)
 
-            if what_to_classify == 'benign':
-                X = self.benign
-                X.drop(columns=['family'], axis=1, inplace=True)
+        elif what_to_classify == 'vpn':
+            X = self.vpn
+            X.drop(columns=['family'], axis=1, inplace=True)
+            Y = self.vpn['family']
 
-            elif what_to_classify == 'vpn':
-                X = self.vpn
-                X.drop(columns=['family'], axis=1, inplace=True)
+        elif what_to_classify == 'tor':
+            X = self.tor
+            X.drop(columns=['family'], axis=1, inplace=True)
+            Y = self.tor['family']
 
-            elif what_to_classify == 'tor':
-                X = self.tor
-                X.drop(columns=['family'], axis=1, inplace=True)
+        Y = self.le.fit_transform(Y)
 
         test_size = self.kwargs.get('test_size', 0.3)
         random_state = self.kwargs.get('random_state', 228)

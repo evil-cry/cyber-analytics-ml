@@ -34,7 +34,7 @@ def compare_models(data):
         results[name] = {
             'y_true': data.Y_test,
             'y_pred': clf.predictions,
-            'y_prob': model.predict_proba(data.X_test_scaled),
+            'y_prob': model.y_prob,
             'train_time': clf.time
         }
         
@@ -53,10 +53,10 @@ def main():
     #cluster.evaluate()
     #cluster.draw()
 
-    cluster = clustering.Cluster(benign, model_name='kmeans', kwargs={'what_to_classify': 'benign'})
-    cluster.fit(n_clusters=8)
-    cluster.evaluate()
-    cluster.draw()
+    #cluster = clustering.Cluster(benign, model_name='kmeans', kwargs={'what_to_classify': 'benign'})
+    #cluster.fit(n_clusters=8)
+    #cluster.evaluate()
+    #cluster.draw()
     
     results = compare_models(data)
     graphs = comparison_graphs.ComparisonGraphs(results)
