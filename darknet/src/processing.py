@@ -46,7 +46,7 @@ class Model:
             end = time.time()
             self.time = end - start
 
-            self.predictions = self._classify()
+            self._classify()
 
         except (KeyError, AttributeError) as e:
             raise KeyError(f"Data does not contain a required key. Perhaphs it's None? - {e}.")
@@ -57,11 +57,11 @@ class Model:
 
     def _classify(self):
         if hasattr(self.model, "predict_proba"):
-            self.y_prob = self.model.predict_proba(self.X_test_scaled)
+            self.y_prob = self.model.predict_proba(self.X_test)
         else:
             self.y_prob = None
-            
-        return self.model.predict(self.X_test)
+
+        self.predictions = self.model.predict(self.X_test)
     
     def evaluate(self, print_report = True):
         self.report = classification_report(self.Y_test, self.predictions)
