@@ -42,6 +42,8 @@ class Model:
                 kwargs.get('max_samples', -1)
             )
 
+            self.feature_names = data.feature_names
+
             start = time.time()
             self._train()
             end = time.time()
@@ -77,14 +79,48 @@ class Model:
             print(f'{self.name} Confusion Matrix - ')
             print(f'\n{self.confusion_matrix}\n')
 
-            print(f'{self.name} Cross Validation - ')
-            self.verify_model_performance()
-            print()
+            #print(f'{self.name} Cross Validation - ')
+            #self.cross_validation()
+            #print()
 
-    def verify_model_performance(self):
-        # 5-fold cross validation
-        scores = cross_val_score(self.model, self.X_train, self.Y_train)
+            importance = self.feature_importance()
+            if importance is not None:
+                print(f'{self.name} Feature Importance - ')
+                i = 0
+                for feature, score in importance.items():
+                    print(f'{i} - {feature}: {score:.3f}', end=', ')
+                    i += 1
+                    if i > 10:
+                        break
+
+                print()
+
+    def feature_importance(self):
+        importance = None
+        sorted_importance = None
+
+        if hasattr(self.model, "feature_importances_"):
+            importance = self.model.feature_importances_
+
+        if importance is not None:
+            feature_names = self.feature_names
+            importance = [float(i) for i in importance]
+
+            importance_dict = dict(zip(feature_names, importance))
+            sorted_importance = dict(sorted(importance_dict.items(), key=lambda x: x[1], reverse=True))
+
+        return sorted_importance
+
+    def cross_validation(self):
+        try:
+            # make a model with the same type and parameters
+            fresh_model = type(self.model)(**self.model.get_params())
+        except:
+            return 0
+        
+        scores = cross_val_score(fresh_model, self.X_train, self.Y_train, cv=5)
         print(f"{scores.mean():.3f} (+/- {scores.std() * 2:.3f})")
+        return scores.mean()
     
     def draw_confusion_matrix(self):
         save_path = f'darknet/graphs/{self.name}'
@@ -143,7 +179,10 @@ class Data:
     
             self.drop_columns([
                 'src ip', 'dst ip', 'timestamp',
-                'flow id', # this column is simply a concat of the src and dst ip and ports
+                'flow id', # this column is simply a concat of the src and dst ip and ports,
+                's1', 's2', # importances for both of these are 0.2 - both account for a total of 40% of the models decision
+                's3', # after removing s1 and s2, s3 started to be 0.2
+                'hour', 's4', 'weekday' # fuck it, remove everything - if there are no features, nothing can cause data leaks
             ])
 
             self._cleanup()
@@ -193,12 +232,14 @@ class Data:
         if not isinstance(self.data, DataFrame):
             return None
         
-        if max_samples != -1 and what_to_classify == 'class':
-            # get the labels
+        if what_to_classify == 'class' and max_samples != -1:
+            # Get class distribution before sampling
+            class_counts = self.data['label'].value_counts()
+            print(f"Original class distribution: {dict(class_counts)}")
+            
+            # Sample up to max_samples randomly from each class
             self.data = self.data.groupby('label').apply(
-                # sample up to max_samples
                 lambda x: x.sample(min(len(x), max_samples), random_state=228)
-            # remove grouping
             ).reset_index(drop=True)
         
         if what_to_classify == 'class':
@@ -227,6 +268,8 @@ class Data:
         random_state = self.kwargs.get('random_state', 228)
 
         self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(X, Y, test_size=test_size, random_state=random_state)
+
+        self.feature_names = self.X_train.columns.tolist()
 
     def set_get_X_Y(self, what_to_classify: str = 'class', scaler = StandardScaler(), max_samples = -1):
         '''

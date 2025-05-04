@@ -27,8 +27,8 @@ def compare_models(data):
     
     results = {}
     for name, model in models.items():
-        model_kwargs = model_kwargs.get(name, {})
-        clf = processing.Model(model, name, data, model_kwargs)
+        current_kwargs = model_kwargs.get(name, {})
+        clf = processing.Model(model, name, data, current_kwargs)
         results[name] = clf.evaluate()
         
         results[name] = {
