@@ -67,7 +67,7 @@ def main():
     graphs.plot_precision_recall_curves(model_name="Random Forest", darkmode=False)
     graphs.plot_runtime_comparison(darkmode=False)
 
-    graphs.plot_confusion_matrix(decoder=data.decode_labels)
+    graphs.plot_confusion_matrix(decoder=data.decode_labels, darkmode=False)
 
     graphs.plot_metric_comparison("accuracy", darkmode=False)
     graphs.plot_metric_comparison("accuracy", darkmode=False)
