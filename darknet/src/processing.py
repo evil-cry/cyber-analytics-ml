@@ -39,7 +39,8 @@ class Model:
             self.X_train, self.X_test, self.Y_train, self.Y_test = data.set_get_X_Y(
                 kwargs.get('what_to_classify', 'class'),
                 kwargs.get('scaler', StandardScaler()),
-                kwargs.get('max_samples', -1)
+                kwargs.get('max_samples', -1),
+                kwargs.get('pca', -1)
             )
 
             self.feature_names = data.feature_names
@@ -85,7 +86,7 @@ class Model:
 
             importance = self.feature_importance()
             if importance is not None:
-                print(f'{self.name} Feature Importance - ')
+                print(f'{self.name} Feature Importance (top 10) - ')
                 i = 0
                 for feature, score in importance.items():
                     print(f'{i} - {feature}: {score:.3f}', end=', ')
@@ -94,6 +95,7 @@ class Model:
                         break
 
                 print()
+            print()
 
     def feature_importance(self):
         importance = None
@@ -121,18 +123,6 @@ class Model:
         scores = cross_val_score(fresh_model, self.X_train, self.Y_train, cv=5)
         print(f"{scores.mean():.3f} (+/- {scores.std() * 2:.3f})")
         return scores.mean()
-    
-    def draw_confusion_matrix(self):
-        save_path = f'darknet/graphs/{self.name}'
-        os.makedirs(save_path, exist_ok=True)
-        save_path = save_path + '/confusion_matrix.png'
-
-        plt.figure(figsize=(8, 8))
-        sns.heatmap(self.confusion_matrix, annot=True, fmt='d')
-        plt.title(f'{self.name} Confusion Matrix')
-        plt.xlabel('Predicted')
-        plt.ylabel('True')
-        plt.savefig(save_path)
 
 class Data:
     def __init__(self, filepaths = 'darknet/corpus/parts/*.csv', kwargs = {}):
@@ -244,18 +234,21 @@ class Data:
         
         if what_to_classify == 'class':
             X = self.data.drop(columns=['label'], axis=1)
-            X.drop(columns=['family'], axis=1, inplace=True) 
             Y = self.data['label']
+            X.drop(columns=['family'], axis=1, inplace=True) 
+           
 
         elif what_to_classify == 'benign':
             X = self.benign
-            X.drop(columns=['family'], axis=1, inplace=True)
             Y = self.benign['family']
+            X.drop(columns=['family'], axis=1, inplace=True)
+            
 
         elif what_to_classify == 'vpn':
             X = self.vpn
-            X.drop(columns=['family'], axis=1, inplace=True)
             Y = self.vpn['family']
+            X.drop(columns=['family'], axis=1, inplace=True)
+            
 
         elif what_to_classify == 'tor':
             X = self.tor
@@ -271,7 +264,7 @@ class Data:
 
         self.feature_names = self.X_train.columns.tolist()
 
-    def set_get_X_Y(self, what_to_classify: str = 'class', scaler = StandardScaler(), max_samples = -1):
+    def set_get_X_Y(self, what_to_classify: str = 'class', scaler = StandardScaler(), max_samples = -1, pca = -1):
         '''
         get the X and Y lists for training
         what_to_classify - if class, classify labels, if benign; vpn; or tor, classify families of said class
@@ -286,6 +279,21 @@ class Data:
                 X_test_scaled = scaler.transform(self.X_test)
             except AttributeError as e:
                 raise AttributeError(f'Scaler must be a sklearn scaler class - {e}')
+            
+        dimensions = self.X_train.shape[1]
+
+        if pca > dimensions: 
+            pca = dimensions
+
+        if pca != -1:
+            try:
+                pca = PCA(n_components=pca)
+                # only fit on training
+                X_train_scaled = pca.fit_transform(X_train_scaled)
+                X_test_scaled = pca.transform(X_test_scaled)
+                self.feature_names = [f'PC{i+1}' for i in range(pca.n_components_)]
+            except AttributeError as e:
+                raise AttributeError(f'PCA must be a sklearn PCA object - {e}')
 
         self.X_train_scaled = X_train_scaled
         self.X_test_scaled = X_test_scaled

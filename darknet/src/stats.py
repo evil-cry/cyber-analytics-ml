@@ -21,9 +21,10 @@ class NetworkTrafficVisualizer:
     Class for creating visualizations for network traffic data.
     '''
 
-    def __init__(self, filepaths = 'darknet/corpus/parts/*.csv', kwargs = {}):
+    def __init__(self, filepaths = 'darknet/corpus/parts/*.csv', kwargs = {}, darkmode = True):
         self.data = processing.Data(filepaths, kwargs).data
         self.cols = self._get_numeric_columns()
+        self.darkmode = darkmode
 
     def _get_numeric_columns(self):
         '''
@@ -37,8 +38,8 @@ class NetworkTrafficVisualizer:
         '''
         print("Plotting correlation matrix...")
 
-        plt.style.use('dark_background')
-        plt.figure(figsize=(12, 12), facecolor='black')
+        plt.style.use('dark_background') if self.darkmode else plt.style.use('default')
+        plt.figure(figsize=(12, 12), facecolor='black' if self.darkmode else 'white' if self.darkmode else 'white')
 
         # Select top N features by variance
         df = self.data.copy()[self.cols]
@@ -53,12 +54,12 @@ class NetworkTrafficVisualizer:
 
         sns.heatmap(corr, mask=mask, cmap='inferno', annot=True, 
             fmt='.2f', linewidths=0.5, vmin=-1, vmax=1)
-        plt.title(f'Correlation Heatmap (Top {n_features} Features by Variance)', color='white')
+        plt.title(f'Correlation Heatmap (Top {n_features} Features by Variance)', color='white' if self.darkmode else 'black')
         ax = plt.gca()
-        ax.set_facecolor('black')
+        ax.set_facecolor('black' if self.darkmode else 'white')
         plt.tight_layout()
-        plt.tick_params(colors='white')
-        plt.savefig('darknet/graphs/correlation_matrix.png', facecolor='black')
+        plt.tick_params(colors='white' if self.darkmode else 'black')
+        plt.savefig('darknet/graphs/correlation_matrix.png', facecolor='black' if self.darkmode else 'white')
         plt.style.use('default')
 
     '''
@@ -67,21 +68,21 @@ class NetworkTrafficVisualizer:
         Plot the distribution of top N features.
         """
         print("Plotting feature distribution...")
-        plt.style.use('dark_background')
-        plt.figure(figsize=(10, 6), facecolor='black')
+        plt.style.use('dark_background') if self.darkmode else plt.style.use('default')
+        plt.figure(figsize=(10, 6), facecolor='black' if self.darkmode else 'white')
 
         # Select top N features by variance
         df = self.data.copy()[self.cols]
         v = df.var().sort_values(ascending=False)
         top_features = v.index[:n_features].to_list()
 
-        fig, axes = plt.subplots(n_features // 2, 2, figsize=(14, 3 * n_features // 2), facecolor='black')
+        fig, axes = plt.subplots(n_features // 2, 2, figsize=(14, 3 * n_features // 2), facecolor='black' if self.darkmode else 'white')
         axes = axes.flatten()
         
         for i, feature in enumerate(top_features):
             axes[i].set_facecolor('black')
-            axes[i].set_title(f'Distribution of {feature}', color='white')
-            axes[i].set_xlabel(feature, color='white')
+            axes[i].set_title(f'Distribution of {feature}', color='white' if self.darkmode else 'black')
+            axes[i].set_xlabel(feature, color='white' if self.darkmode else 'black')
             axes[i].tick_params(colors='white')
             
             # Add vertical lines for key statistics
@@ -90,10 +91,10 @@ class NetworkTrafficVisualizer:
             sns.histplot(data=self.data[feature], ax=axes[i], color='#f66500')
             axes[i].axvline(mean, color='r', linestyle='--', label=f'Mean: {mean:.2f}')
             axes[i].axvline(median, color='g', linestyle='-.', label=f'Median: {median:.2f}')
-            axes[i].legend(facecolor='black', labelcolor='white')
+            axes[i].legend(facecolor='black' if self.darkmode else 'white', labelcolor='white' if self.darkmode else 'black')
 
         plt.tight_layout()
-        plt.savefig('darknet/graphs/feature_distribution.png', facecolor='black')
+        plt.savefig('darknet/graphs/feature_distribution.png', facecolor='black' if self.darkmode else 'white')
         plt.style.use('default')
     '''
 
@@ -102,8 +103,8 @@ class NetworkTrafficVisualizer:
         Plot the distribution of a specific protocol.
         '''
         print("Plotting protocol distribution...")
-        plt.style.use('dark_background')
-        plt.figure(figsize=(10, 6), facecolor='black')
+        plt.style.use('dark_background') if self.darkmode else plt.style.use('default')
+        plt.figure(figsize=(10, 6), facecolor='black' if self.darkmode else 'white')
         
         if 'Protocol' in self.data.columns:
             protocol_counts = self.data['Protocol'].value_counts()
@@ -116,15 +117,15 @@ class NetworkTrafficVisualizer:
                 )
             
             sns.barplot(x=protocol_counts.index, y=protocol_counts.values, color='#f66500')
-            plt.title('Protocol Distribution', color='white')
-            plt.xlabel('Protocol', color='white')
-            plt.ylabel('Count', color='white')
-            plt.tick_params(colors='white')
+            plt.title('Protocol Distribution', color='white' if self.darkmode else 'black')
+            plt.xlabel('Protocol', color='white' if self.darkmode else 'black')
+            plt.ylabel('Count', color='white' if self.darkmode else 'black')
+            plt.tick_params(colors='white' if self.darkmode else 'black')
             ax = plt.gca()
-            ax.set_facecolor('black')
+            ax.set_facecolor('black' if self.darkmode else 'white')
             plt.xticks(rotation=45)
             plt.tight_layout()
-            plt.savefig(f'darknet/graphs/protocol_distribution.png', facecolor='black')
+            plt.savefig(f'darknet/graphs/protocol_distribution.png', facecolor='black' if self.darkmode else 'white')
             plt.style.use('default')
 
     def plot_network_graph(self, max_edges: int = 100):
@@ -215,31 +216,31 @@ class NetworkTrafficVisualizer:
             )
             
             # Plot heatmap
-            plt.style.use('dark_background')
-            plt.figure(figsize=(10, 8), facecolor='black')
+            plt.style.use('dark_background') if self.darkmode else plt.style.use('default') if self.darkmode else plt.style.use('default')
+            plt.figure(figsize=(10, 8), facecolor='black' if self.darkmode else 'white')
             sns.heatmap(port_crosstab, annot=True, fmt='d', cmap='inferno')
-            plt.title('Source Port vs. Destination Port Categories', color='white')
-            plt.xlabel('Destination Port Category', color='white')
-            plt.ylabel('Source Port Category', color='white')
+            plt.title('Source Port vs. Destination Port Categories', color='white' if self.darkmode else 'black')
+            plt.xlabel('Destination Port Category', color='white' if self.darkmode else 'black')
+            plt.ylabel('Source Port Category', color='white' if self.darkmode else 'black')
             ax = plt.gca()
-            ax.set_facecolor('black')
+            ax.set_facecolor('black' if self.darkmode else 'white')
             plt.tight_layout()
-            plt.savefig('darknet/graphs/port_heatmap.png', facecolor='black')
+            plt.savefig('darknet/graphs/port_heatmap.png', facecolor='black' if self.darkmode else 'white')
             
             # Plot top ports
-            plt.figure(figsize=(12, 6), facecolor='black')
+            plt.figure(figsize=(12, 6), facecolor='black' if self.darkmode else 'white')
             top_dst_ports = self.data['dst port'].value_counts().head(10)
             sns.barplot(x=top_dst_ports.index, y=top_dst_ports.values, color='#f66500')
-            plt.title('Top 10 Destination Ports', color='white')
-            plt.xlabel('Port', color='white')
-            plt.ylabel('Count', color='white')
-            plt.tick_params(colors='white')
+            plt.title('Top 10 Destination Ports', color='white' if self.darkmode else 'black')
+            plt.xlabel('Port', color='white' if self.darkmode else 'black')
+            plt.ylabel('Count', color='white' if self.darkmode else 'black')
+            plt.tick_params(colors='white' if self.darkmode else 'black')
             ax = plt.gca()
-            ax.set_facecolor('black')
+            ax.set_facecolor('black' if self.darkmode else 'white')
             plt.xticks(rotation=45)
             plt.tight_layout()
-            plt.tick_params(colors='white')
-            plt.savefig('darknet/graphs/top_dst_ports.png', facecolor='black')
+            plt.tick_params(colors='white' if self.darkmode else 'black')
+            plt.savefig('darknet/graphs/top_dst_ports.png', facecolor='black' if self.darkmode else 'white')
             plt.style.use('default')
 
     def plot_class_piechart(self, label: str = 'label'):
@@ -252,8 +253,8 @@ class NetworkTrafficVisualizer:
         if label not in ['label', 'benign', 'vpn', 'tor']:
             raise ValueError('Label must be label, benign, vpn or tor.')
 
-        plt.style.use('dark_background')
-        plt.figure(figsize=(12, 8), facecolor='black')
+        plt.style.use('dark_background') if self.darkmode else plt.style.use('default')
+        plt.figure(figsize=(12, 8), facecolor='black' if self.darkmode else 'white')
         
         # Get class counts
         if label == 'label':
@@ -273,11 +274,11 @@ class NetworkTrafficVisualizer:
         
         # Create pie chart without labels or percentages on the plot
         patches, _ = plt.pie(class_counts.values,
-                        colors=plt.cm.Set3.colors,
+                        colors=plt.cm.Set3.colors if self.darkmode else plt.cm.Dark2.colors,
                         startangle=90)
         
         plt.title(f'Distribution of {label if label in ["benign", "vpn", "tor"] else "all"} samples\nTotal: {total:,} samples', 
-                color='white', 
+                color='white' if self.darkmode else 'black', 
                 pad=20)
         
         # Add legend
@@ -286,21 +287,21 @@ class NetworkTrafficVisualizer:
                 title='Classes',
                 loc='center left',
                 bbox_to_anchor=(1, 0.5),
-                facecolor='black',
-                labelcolor='white')
+                facecolor='black' if self.darkmode else 'white',
+                labelcolor='white' if self.darkmode else 'black')
         
         # Equal aspect ratio ensures that pie is drawn as a circle
         plt.axis('equal')
         
         plt.tight_layout()
-        plt.tick_params(colors='white')
+        plt.tick_params(colors='white' if self.darkmode else 'black')
         plt.savefig(f'darknet/graphs/{label if label in ["benign", "vpn", "tor"] else "all"}_distribution.png', 
-                    facecolor='black',
+                    facecolor='black' if self.darkmode else 'white',
                     bbox_inches='tight')
         plt.style.use('default')
 
 def main():
-    visualizer = NetworkTrafficVisualizer()
+    visualizer = NetworkTrafficVisualizer(darkmode=False)
     visualizer.plot_correlation_matrix(n_features=20)
     #visualizer.plot_feature_distribution(n_features=5)
     visualizer.plot_protocol_distribution()

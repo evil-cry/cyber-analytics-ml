@@ -48,13 +48,13 @@ class ComparisonGraphs:
 
         return metrics
 
-    def plot_confusion_matrix(self, model_name: str = None, figsize=(12, 12), decoder = None):
+    def plot_confusion_matrix(self, model_name: str = None, figsize=(12, 12), decoder = None, darkmode = True):
         '''
         Plot confusion matrix for a single model and single class (if specified),
         or all models + micro-average if no args given.
         '''
         print("Plotting confusion matrix...")
-        plt.style.use('dark_background')
+        plt.style.use('dark_background') if darkmode else plt.style.use('default')
         plt.figure(figsize=figsize)
         
         if model_name is not None and model_name in self.results:
@@ -77,17 +77,17 @@ class ComparisonGraphs:
             cm = confusion_matrix(y_true, y_pred)
         
             sns.heatmap(cm, annot=True, fmt='d', cmap='inferno', cbar=False)
-            plt.title(f"Confusion Matrix for {model}", color='white')
-            plt.xlabel("Predicted", color='white')
-            plt.ylabel("True", color='white')
-            plt.xticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0, color='white')
-            plt.yticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0, color='white')
+            plt.title(f"Confusion Matrix for {model}", color='white' if darkmode else 'black')
+            plt.xlabel("Predicted", color='white' if darkmode else 'black')
+            plt.ylabel("True", color='white' if darkmode else 'black')
+            plt.xticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0, color='white' if darkmode else 'black')
+            plt.yticks(ticks=np.arange(len(classes)) + 0.5, labels=classes, rotation=0, color='white' if darkmode else 'black')
     
             plt.tight_layout()
-            plt.savefig(f"darknet/graphs/{model}_confusion_matrix.png", facecolor='black', edgecolor='none')
+            plt.savefig(f"darknet/graphs/{model}_confusion_matrix.png", facecolor='black' if darkmode else 'white', edgecolor='none' if darkmode else 'black')
             plt.close()
 
-    def plot_roc_curves(self, model_name: str = None, class_label=None, save_path: str = "darknet/graphs/roc_curve.png", figsize=(12, 6)):
+    def plot_roc_curves(self, model_name: str = None, class_label=None, save_path: str = "darknet/graphs/roc_curve.png", figsize=(12, 6), darkmode = True):
         '''
         Plot ROC for a single model and single class (if specified),
         or all models + micro-average if no args given.
@@ -99,7 +99,7 @@ class ComparisonGraphs:
                         If None and multiclass, plots micro-average only.
         '''
         print("Plotting ROC curves...")
-        plt.style.use('dark_background')
+        plt.style.use('dark_background') if darkmode else plt.style.use('default') if darkmode else plt.style.use('default')
         plt.figure(figsize=figsize)
         
         if model_name in self.results:
@@ -147,23 +147,23 @@ class ComparisonGraphs:
                     )
                 
         plt.plot([0, 1], [0, 1], linestyle='-', color='#f66500', alpha=0.5)
-        plt.title("ROC Curve", color='white')
-        plt.xlabel("False Positive Rate", color='white')
-        plt.ylabel("True Positive Rate", color='white')
-        plt.legend(loc="lower right", facecolor='black', labelcolor='white')
+        plt.title("ROC Curve", color='white' if darkmode else 'black')
+        plt.xlabel("False Positive Rate", color='white' if darkmode else 'black')
+        plt.ylabel("True Positive Rate", color='white' if darkmode else 'black')
+        plt.legend(loc="lower right", facecolor='black', labelcolor='white' if darkmode else 'black')
         plt.grid(True, color='gray', alpha=0.2)
-        plt.tick_params(colors='white')
+        plt.tick_params(colors='white' if darkmode else 'black')
         plt.tight_layout()
-        plt.savefig(save_path, facecolor='black', edgecolor='none')
+        plt.savefig(save_path, facecolor='black' if darkmode else 'white', edgecolor='none' if darkmode else 'black')
         plt.close()
 
-    def plot_precision_recall_curves(self, model_name: str = None, class_label=None, save_path: str = "darknet/graphs/precision_recall_curve.png", figsize=(12, 6)):
+    def plot_precision_recall_curves(self, model_name: str = None, class_label=None, save_path: str = "darknet/graphs/precision_recall_curve.png", figsize=(12, 6), darkmode = True):
         '''
         Generate the precison and recall curves of the model
         '''
 
         print("Plotting Precision-Recall curves...")
-        plt.style.use('dark_background')
+        plt.style.use('dark_background') if darkmode else plt.style.use('default') if darkmode else plt.style.use('default')
         plt.figure(figsize=figsize)
     
         # Determine which models to plot
@@ -223,52 +223,56 @@ class ComparisonGraphs:
         
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
-        plt.title("Precision-Recall Curve", color='white')
-        plt.xlabel("Recall", color='white')
-        plt.ylabel("Precision", color='white')
-        plt.legend(loc="lower left", facecolor='black', labelcolor='white')
+        plt.title("Precision-Recall Curve", color='white' if darkmode else 'black')
+        plt.xlabel("Recall", color='white' if darkmode else 'black')
+        plt.ylabel("Precision", color='white' if darkmode else 'black')
+        plt.legend(loc="lower left", facecolor='black', labelcolor='white' if darkmode else 'black')
         plt.grid(True, color='gray', alpha=0.2)
-        plt.tick_params(colors='white')
+        plt.tick_params(colors='white' if darkmode else 'black')
         plt.tight_layout()
-        plt.savefig(save_path, facecolor='black', edgecolor='none')
+        plt.savefig(save_path, facecolor='black' if darkmode else 'white', edgecolor='none' if darkmode else 'black')
         plt.close()
         
-    def plot_runtime_comparison(self, figsize=(12, 6), save_path="darknet/graphs/runtime_comparison.png"):  
+    def plot_runtime_comparison(self, figsize=(12, 6), save_path="darknet/graphs/runtime_comparison.png", darkmode = True):  
         '''
         Bar chart comparing the training times of each model
         '''
         print("Plotting runtime comparison...")
-        plt.style.use('dark_background')
+        plt.style.use('dark_background') if darkmode else plt.style.use('default') if darkmode else plt.style.use('default')
         plt.figure(figsize=figsize)
 
         models = list(self.results.keys())
         times = [self.results[m]['train_time'] for m in models]
 
-        bars = plt.bar(models, times, color='#f66500', edgecolor='white', linewidth=1.2)
+        bars = plt.bar(models, times, color='#f66500', edgecolor='white' if darkmode else 'black', linewidth=1.2)
 
         # Add time values as text on top of bars
         for i, (bar, time_val) in enumerate(zip(bars, times)):
             height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2, height + max(times)*0.02,
+            # Add more vertical padding (0.04 -> more like 0.1-0.2)
+            # Use a percentage of height for better scaling with different values
+            padding = max(0.1, height * 0.05)  # Minimum padding or 5% of height
+            
+            plt.text(bar.get_x() + bar.get_width()/2, height + padding,
                     f'{time_val:.4f}s', ha='center', va='bottom', 
-                    fontweight='bold', fontsize=10, color='white')
+                    fontweight='bold', fontsize=10, color='white' if darkmode else 'black')
         
         # Add grid lines for better readability
         plt.grid(True, axis='y', linestyle='--', alpha=0.2, color='gray')
         
         # Adjust y-axis for text labels
         plt.ylim(0, max(times) * 1.15)
-        plt.axhline(y=0, color='white', linestyle='-', alpha=0.3)
+        plt.axhline(y=0, color='white' if darkmode else 'black', linestyle='-', alpha=0.3)
 
-        plt.xlabel("Models", color='white')
-        plt.ylabel("Training Time (seconds)", color='white')
-        plt.title("Model Training Time Comparison", color='white')
-        plt.tick_params(colors='white')
+        plt.xlabel("Models", color='white' if darkmode else 'black')
+        plt.ylabel("Training Time (seconds)", color='white' if darkmode else 'black')
+        plt.title("Model Training Time Comparison", color='white' if darkmode else 'black')
+        plt.tick_params(colors='white' if darkmode else 'black')
         plt.tight_layout()
-        plt.savefig(save_path, facecolor='black', edgecolor='none')
+        plt.savefig(save_path, facecolor='black' if darkmode else 'white', edgecolor='none' if darkmode else 'black')
         plt.close()
 
-    def plot_metric_comparison(self, metric_name: str = None, figsize=(12, 6), save_path: str = 'darknet/graphs/metric_comparison'):
+    def plot_metric_comparison(self, metric_name: str = None, figsize=(12, 6), save_path: str = 'darknet/graphs/metric_comparison', darkmode = True):
         '''
         Input the metric you would like to compare and create a 
         chart comparing the metric against all models
@@ -276,7 +280,7 @@ class ComparisonGraphs:
         os.makedirs(save_path, exist_ok=True)
         save_path = save_path + f"/{metric_name}.png"
 
-        plt.style.use('dark_background')
+        plt.style.use('dark_background') if darkmode else plt.style.use('default') if darkmode else plt.style.use('default')
         plt.figure(figsize=figsize)
     
         models = []
@@ -332,22 +336,21 @@ class ComparisonGraphs:
         )
         
         for patch in ax.patches:
-            patch.set_facecolor('#f66500')
-            patch.set_edgecolor('white')
+            patch.set_edgecolor('white' if darkmode else 'black')
             patch.set_linewidth(1.2)
             
-        ax.set_facecolor('black')
+        ax.set_facecolor('black') if darkmode else 'white'
         plt.grid(True, axis='y', linestyle='--', alpha=0.2, color='gray')
 
-        plt.title(f"{metric_name.capitalize()} Comparison Across Models", color='white')
-        plt.xlabel("Models", color='white')
-        plt.ylabel(metric_name.capitalize(), color='white')
-        plt.xticks(color='white')
-        plt.tick_params(colors='white')
+        plt.title(f"{metric_name.capitalize()} Comparison Across Models", color='white' if darkmode else 'black')
+        plt.xlabel("Models", color='white' if darkmode else 'black')
+        plt.ylabel(metric_name.capitalize(), color='white' if darkmode else 'black')
+        plt.xticks(color='white' if darkmode else 'black')
+        plt.tick_params(colors='white' if darkmode else 'black')
         
         for i, v in enumerate(metric_v):
-            ax.text(i, v + 0.01, f"{v:.2f}", ha='center', fontsize=12, color='white')
+            ax.text(i, v + 0.01, f"{v:.2f}", ha='center', fontsize=12, color='white' if darkmode else 'black')
 
         plt.tight_layout()
-        plt.savefig(save_path, facecolor='black', edgecolor='none')
+        plt.savefig(save_path, facecolor='black' if darkmode else 'white', edgecolor='none' if darkmode else 'black')
         plt.close()

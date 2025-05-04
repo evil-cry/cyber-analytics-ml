@@ -18,7 +18,7 @@ class Cluster:
         what_to_classify = kwargs.get('what_to_classify', 'class')
         self.X_train, self.X_test, self.Y_train, self.Y_test = data.set_get_X_Y(
             what_to_classify=what_to_classify,
-            max_samples=kwargs.get('max_samples', 0)
+            max_samples=kwargs.get('max_samples', -1)
         )
 
         self.features = np.vstack((data.X_train_scaled, data.X_test_scaled))
@@ -55,7 +55,7 @@ class Cluster:
             self.silhouette = 0
             self.calinski = 0
 
-    def draw(self, filepath='darknet/graphs/clusters'):
+    def draw(self, filepath='darknet/graphs/clusters', darkmode = True):
         '''
             Draw graph which visualizes the results of the model
             Labels each cluster by the majority of traffic in it
@@ -70,10 +70,10 @@ class Cluster:
         points_2d = pca.fit_transform(self.features)
         
         # Plot each cluster
-        plt.style.use('dark_background')
-        plt.figure(figsize=(8, 8), facecolor='black')
+        plt.style.use('dark_background') if darkmode else plt.style.use('default')
+        plt.figure(figsize=(8, 8), facecolor='black' if darkmode else 'white')
         ax = plt.gca()
-        ax.set_facecolor('black')
+        ax.set_facecolor('black' if darkmode else 'white')
 
         unique_labels = np.unique(self.clusters)
         used_labels = []
@@ -96,7 +96,7 @@ class Cluster:
                 label_name = f'Cluster {label}'
                 
             if label_name in used_labels:
-                label_name = f'{label_name} (Cluster {used_labels.count(label_name)})'
+                label_name = f'{label_name} (Cluster {i})'
             used_labels.append(label_name)
             
             plt.scatter(
@@ -105,20 +105,20 @@ class Cluster:
                 s=30,
                 alpha=0.6,
                 label=label_name,
-                color=plt.cm.Set3(i % 12),
+                color=plt.cm.Set3(i % 12) if darkmode else plt.cm.Dark2(i % 8),
             )
             
         plt.title(f'{self.model_name.capitalize()} Cluster Plot ({self.n_clusters} clusters)', 
-                color='white', pad=20)
-        plt.xlabel('Principal Component 1', color='white')
-        plt.ylabel('Principal Component 2', color='white')
-        plt.tick_params(colors='white')
+                color='white' if darkmode else 'black', pad=20)
+        plt.xlabel('Principal Component 1', color='white' if darkmode else 'black')
+        plt.ylabel('Principal Component 2', color='white' if darkmode else 'black')
+        plt.tick_params(colors='white' if darkmode else 'black')
         
-        legend = plt.legend(facecolor='black', labelcolor='white')
-        plt.setp(legend.get_frame(), color='black')
+        legend = plt.legend(facecolor='black', labelcolor='white' if darkmode else 'black')
+        plt.setp(legend.get_frame(), color='black' if darkmode else 'white')
         
         plt.tight_layout()
-        plt.savefig(filepath, facecolor='black', bbox_inches='tight')
+        plt.savefig(filepath, facecolor='black' if darkmode else 'white', bbox_inches='tight')
         plt.close()
         
         plt.style.use('default')

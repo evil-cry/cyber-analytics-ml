@@ -19,8 +19,8 @@ def compare_models(data):
 
     model_kwargs = {
         'Random Forest': {'scaler': RobustScaler()},
-        'KNN': {'scaler': RobustScaler()},
-        'SVM': {'scaler': StandardScaler()},
+        'KNN': {'scaler': RobustScaler()}, # it was found that additional PCA only hurts the model
+        'SVM': {'scaler': StandardScaler(), 'pca':30}, # doesn't imrpove after 30. Using standardScaler() because robust completely freezes it
         'OvO Random Forest': {},
         'OvA Random Forest': {},
     }
@@ -48,28 +48,33 @@ def main():
 
     #data.analyze_columns()
     
-    #cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'class'})
-    #cluster.fit(n_clusters=3)
-    #cluster.evaluate()
-    #cluster.draw()
+    '''
+    cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'class'})
+    cluster.fit(n_clusters=3)
+    cluster.evaluate()
+    cluster.draw(darkmode=False)
 
-    #cluster = clustering.Cluster(benign, model_name='kmeans', kwargs={'what_to_classify': 'benign'})
-    #cluster.fit(n_clusters=8)
-    #cluster.evaluate()
-    #cluster.draw()
+    cluster = clustering.Cluster(benign, model_name='kmeans', kwargs={'what_to_classify': 'benign'})
+    cluster.fit(n_clusters=8)
+    cluster.evaluate()
+    cluster.draw(darkmode=False)
+    '''
     
     results = compare_models(data)
     graphs = comparison_graphs.ComparisonGraphs(results)
-    graphs.plot_roc_curves(model_name="Random Forest")
-    graphs.plot_precision_recall_curves(model_name="Random Forest")
-    graphs.plot_runtime_comparison()
+
+    graphs.plot_roc_curves(model_name="Random Forest", darkmode=False)
+    graphs.plot_precision_recall_curves(model_name="Random Forest", darkmode=False)
+    graphs.plot_runtime_comparison(darkmode=False)
+
     graphs.plot_confusion_matrix(decoder=data.decode_labels)
-    graphs.plot_metric_comparison("accuracy")
-    graphs.plot_metric_comparison("accuracy")
-    graphs.plot_metric_comparison("precision")
-    graphs.plot_metric_comparison("recall")
-    graphs.plot_metric_comparison("f1")
-    graphs.plot_metric_comparison("fpr")
+
+    graphs.plot_metric_comparison("accuracy", darkmode=False)
+    graphs.plot_metric_comparison("accuracy", darkmode=False)
+    graphs.plot_metric_comparison("precision", darkmode=False)
+    graphs.plot_metric_comparison("recall", darkmode=False)
+    graphs.plot_metric_comparison("f1", darkmode=False)
+    graphs.plot_metric_comparison("fpr", darkmode=False)
 
 if __name__ == "__main__":
     main()
