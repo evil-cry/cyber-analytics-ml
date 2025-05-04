@@ -10,19 +10,19 @@ from sklearn.neighbors import KNeighborsClassifier
 
 def compare_models(data):
     models = {
-        'Random Forest': RandomForestClassifier(),
         'KNN': KNeighborsClassifier(),
-        'SVM': SVC(),
+        'Random Forest': RandomForestClassifier(),
         'OvO Random Forest': OneVsOneClassifier(RandomForestClassifier(), n_jobs=-1),
         'OvA Random Forest': OneVsRestClassifier(RandomForestClassifier(), n_jobs=-1),
+        'SVM': SVC(),
     }
 
     model_kwargs = {
+        'KNN': {'scaler': RobustScaler(), 'pca': 35},
         'Random Forest': {'scaler': RobustScaler()},
-        'KNN': {'scaler': RobustScaler()}, # it was found that additional PCA only hurts the model
-        'SVM': {'scaler': StandardScaler(), 'pca':30}, # doesn't imrpove after 30. Using standardScaler() because robust completely freezes it
         'OvO Random Forest': {},
         'OvA Random Forest': {},
+        'SVM': {'scaler': StandardScaler(), 'pca':35}, # doesn't imrpove after 30. Using standardScaler() because robust completely freezes it
     }
     
     results = {}

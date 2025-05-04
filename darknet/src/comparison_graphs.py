@@ -348,8 +348,12 @@ class ComparisonGraphs:
         plt.xticks(color='white' if darkmode else 'black')
         plt.tick_params(colors='white' if darkmode else 'black')
         
+        y_offset = (ax.get_ylim()[1] - ax.get_ylim()[0]) * 0.01 
+
         for i, v in enumerate(metric_v):
-            ax.text(i, v + 0.01, f"{v:.2f}", ha='center', fontsize=12, color='white' if darkmode else 'black')
+            ax.text(i, v + y_offset, f"{v:.2f}",
+                    ha='center', va='bottom', fontsize=12,
+                    color='white' if darkmode else 'black')
 
         plt.tight_layout()
         plt.savefig(save_path, facecolor='black' if darkmode else 'white', edgecolor='none' if darkmode else 'black')
