@@ -287,6 +287,7 @@ class NetworkTrafficVisualizer:
                 title='Classes',
                 loc='center left',
                 bbox_to_anchor=(1, 0.5),
+                fontsize='large', 
                 facecolor='black' if self.darkmode else 'white',
                 labelcolor='white' if self.darkmode else 'black')
         
