@@ -348,10 +348,11 @@ class ComparisonGraphs:
         plt.xticks(color='white' if darkmode else 'black')
         plt.tick_params(colors='white' if darkmode else 'black')
         
-        y_offset = (ax.get_ylim()[1] - ax.get_ylim()[0]) * 0.01 
+        top_y = ax.get_ylim()[1]
+        text_y = top_y - (top_y * 0.05)  # 5% below the top
 
         for i, v in enumerate(metric_v):
-            ax.text(i, v + y_offset, f"{v:.2f}",
+            ax.text(i, text_y, f"{v:.2f}",
                     ha='center', va='bottom', fontsize=12,
                     color='white' if darkmode else 'black')
 

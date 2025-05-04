@@ -256,14 +256,14 @@ class NetworkTrafficVisualizer:
         plt.style.use('dark_background') if self.darkmode else plt.style.use('default')
         plt.figure(figsize=(12, 8), facecolor='black' if self.darkmode else 'white')
         
-        # Get class counts
         if label == 'label':
-            class_counts = self.data['label'].value_counts()
+                class_counts = self.data['label'].value_counts()
+                total = class_counts.sum()
         else:
-            class_counts = self.data['family'].value_counts()
-        
-        # Calculate percentages
-        total = class_counts.sum()
+            filtered_data = self.data[self.data['label'] == label]
+            class_counts = filtered_data['family'].value_counts()
+            total = len(filtered_data)
+
         percentages = (class_counts / total) * 100
         
         # Create custom labels for legend
