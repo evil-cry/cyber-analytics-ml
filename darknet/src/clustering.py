@@ -27,9 +27,6 @@ class Cluster:
         self.clusters = None
         self.n_clusters = 0
 
-        self.silhouette = 0
-        self.calinski = 0
-
     def fit(self, **kwargs):
         print(f'Clustering using {self.model_name} model...')
 
@@ -63,7 +60,7 @@ class Cluster:
         
         filepath = filepath + f'/{self.model_name}/'
         os.makedirs(filepath, exist_ok=True)
-        filepath = filepath + f'{str(self.n_clusters)}.png'
+        filepath = filepath + f'{str(self.n_clusters)}' + f'{str(self.kwargs.get("max_features", ""))}.png'
 
         # Reduce the number of components to 2 so it is 2D
         pca = PCA(n_components=2)

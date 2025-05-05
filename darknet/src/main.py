@@ -48,18 +48,16 @@ def main():
 
     #data.analyze_columns()
     
-    '''
-    cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'class'})
+    cluster = clustering.Cluster(data, model_name='kmeans', kwargs={'what_to_classify': 'class', 'max_samples': 3000})
     cluster.fit(n_clusters=3)
     cluster.evaluate()
     cluster.draw(darkmode=False)
 
-    cluster = clustering.Cluster(benign, model_name='kmeans', kwargs={'what_to_classify': 'benign'})
+    cluster = clustering.Cluster(benign, model_name='kmeans', kwargs={'what_to_classify': 'benign', 'max_samples': 3000})
     cluster.fit(n_clusters=8)
     cluster.evaluate()
     cluster.draw(darkmode=False)
-    '''
-    
+
     results = compare_models(data)
     graphs = comparison_graphs.ComparisonGraphs(results)
 
