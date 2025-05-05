@@ -28,7 +28,7 @@ class Cluster:
         self.n_clusters = 0
 
     def fit(self, **kwargs):
-        print(f'Clustering using {self.model_name} model...')
+        print(f'Clustering using {self.model_name} model (this may take a while)...')
 
         if self.model_name == 'kmeans':
             n_clusters = kwargs.get('n_clusters', 8)
