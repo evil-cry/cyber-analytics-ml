@@ -1,0 +1,4 @@
+The dataset was modified to change the last column header to "families" instead of "label".
+Some headers have been slightly modified to remove special characters.
+'nonvpn' was replaced with 'non-vpn' to be consistent.
+Splitting the file into two was required for github to allow it.
